@@ -1,0 +1,8 @@
+.card {
+    background-color: lightskyblue;
+    min-height: 20vh;
+    max-height: 20vh;
+    width: 12em;
+    overflow: auto;
+    font-size: 12px;
+}
