@@ -16,8 +16,13 @@ function App() {
     <div>
       <Router>
         <div>
-          {/* can I add a ternary or something (maybe function?) so this only displays
-          for the writing desk or corkboard view and not if logged out or on story list */}
+          {/* TODO this only displays on the writing desk or corkboard, not if logged out or on story list 
+
+          App in state remembers what user (if any) is logged in -- what level of app needs to remember which story is active? 
+          both writingdesk and corkboard need to know -- so App? then app can also only show this if a story
+          is in state and a user is logged in
+          
+          where are axios requests made from then, App or writingdesk/corkboard? */}
           <nav className="navbar">
               <Link to='/desk'>Writing Desk</Link>
               <Link to='/corkboard'>Corkboard</Link>
