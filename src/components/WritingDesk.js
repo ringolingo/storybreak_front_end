@@ -53,7 +53,6 @@ const WritingDesk = () => {
             <div className="writing-desk__button-bar d-flex flex-row justify-content-center">
                 <button onClick={saveWork} className="btn btn-primary rounded m-1">Save</button>
                 <button className="btn btn-secondary rounded m-1">Add New Scene</button>
-                <button className="btn btn-info rounded m-1">Add New Scene</button>
             </div>
         </div>
     )
