@@ -1,0 +1,6 @@
+.writing-desk__editor {
+    min-height: 80vh;
+    max-height: 80vh;
+    overflow: auto;
+}
+
