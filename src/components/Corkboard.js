@@ -11,18 +11,22 @@ const placeholderCards = [
     {
         id: 1,
         logline: 'it was a dark and stormy night',
+        location: 0,
     },
     {
         id: 2,
-        logline: 'there was a boy named Eustance Clarence Scrubb, and he almost deserved it',
+        logline: 'there was a boy named Eustace Clarence Scrubb, and he almost deserved it',
+        location: 1,
     },
     {
         id: 3,
         logline: 'it was love at first sight',
+        location: 2
     },
     {
         id: 4,
-        logline: 'it is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife'
+        logline: 'it is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife',
+        location: 3
     }
 ]
 
@@ -32,12 +36,14 @@ const Corkboard = () => {
     const [currentCard, setCurrentCard] = useState({
         id: null,
         logline: '',
+        location: null,
     });
 
     const popOutCard = (card) => {
         const selectedCard = {
             id: card.id,
             logline: card.logline,
+            location: card.location,
         }
         setCurrentCard(selectedCard);
         setShowModal(true);
@@ -48,12 +54,13 @@ const Corkboard = () => {
         setCurrentCard({
             id: null,
             logline: null,
+            location: null,
         })
     }
 
-    const cardComponents = cards.map((card) => {
+    const cardComponents = cards.map((card, i) => {
         return (
-            <IndexCard logline={card.logline} key={card.id} id={card.id} showCard={popOutCard} />
+            <IndexCard logline={card.logline} key={card.id} id={card.id} showCard={popOutCard} location={card.location} />
         )
     });
 
@@ -63,6 +70,7 @@ const Corkboard = () => {
         const newCard = {
             id: cards.length + 1,
             logline: '',
+            location: cards.length
         }
         expandedCards.push(newCard);
         setCards(expandedCards);
@@ -74,6 +82,7 @@ const Corkboard = () => {
         const updatedCard = {
             id: currentCard.id,
             logline: event.target.value,
+            location: currentCard.location,
         };
 
         setCurrentCard(updatedCard);
@@ -100,13 +109,36 @@ const Corkboard = () => {
         const trimmedCards = [];
 
         cards.forEach((card) => {
-            if (card.id != currentCard.id) {
+            if (card.id !== currentCard.id) {
                 trimmedCards.push(card);
             }
         });
 
         setCards(trimmedCards);
         closeModal();
+    }
+
+    const moveCard = (mod) => {
+        if ((currentCard.location + mod >= cards.length) || (currentCard.location + mod < 0)) {
+            closeModal();
+            return;
+        }
+        
+        const shuffleCards = cards;
+
+        shuffleCards.splice(currentCard.location, 1)
+        shuffleCards.splice(currentCard.location + mod, 0, currentCard)
+
+        const updateLocations = shuffleCards.map((card, index) => {
+            const updateCard = {...card};
+            updateCard.location = index;
+            return updateCard;
+        });
+        setCards(updateLocations);
+
+        const movedCard = {...currentCard};
+        movedCard.location = currentCard.location + mod;
+        setCurrentCard(movedCard);
     }
 
     return (
@@ -146,6 +178,8 @@ const Corkboard = () => {
                     <Button variant="primary" onClick={saveCardChanges}>
                         Save Changes
                     </Button>
+                    {currentCard.location === 0 ? null : <Button variant="info" onClick={() => moveCard(-1)}>Move Scene Earlier</Button>}
+                    {currentCard.location === cards.length - 1 ? null : <Button variant="info" onClick={() => moveCard(1)}>Move Scene Later</Button>}
                     <Button variant="danger" onClick={deleteCard}>
                         Delete Scene
                     </Button>

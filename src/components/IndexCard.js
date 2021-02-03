@@ -2,10 +2,10 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import './IndexCard.css'
 
-const IndexCard = ({id, logline, showCard}) => {
+const IndexCard = ({id, logline, location, showCard}) => {
 
     const popOutCard = () => {
-        showCard({id: id, logline: logline});
+        showCard({id: id, logline: logline, location: location});
     };
 
     return (
