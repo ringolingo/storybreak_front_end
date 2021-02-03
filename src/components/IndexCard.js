@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import IndexCardEditForm from './IndexCardEditForm';
 import './IndexCard.css'
 
 const IndexCard = ({id, logline, showCard}) => {

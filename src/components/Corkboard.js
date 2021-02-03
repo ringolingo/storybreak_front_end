@@ -79,6 +79,7 @@ const Corkboard = () => {
         setCurrentCard(updatedCard);
     };
 
+    // TODO - refactor to send changes to back end
     const saveCardChanges = () => {
         const updatedCards = [];
         
@@ -93,6 +94,20 @@ const Corkboard = () => {
         setCards(updatedCards);
         closeModal();
     };
+
+    // TODO refactor to send changes to back end
+    const deleteCard = () => {
+        const trimmedCards = [];
+
+        cards.forEach((card) => {
+            if (card.id != currentCard.id) {
+                trimmedCards.push(card);
+            }
+        });
+
+        setCards(trimmedCards);
+        closeModal();
+    }
 
     return (
         <div className="corkboard__wall">
@@ -130,6 +145,9 @@ const Corkboard = () => {
                     </Button>
                     <Button variant="primary" onClick={saveCardChanges}>
                         Save Changes
+                    </Button>
+                    <Button variant="danger" onClick={deleteCard}>
+                        Delete Scene
                     </Button>
                 </Modal.Footer>
             </Modal>
