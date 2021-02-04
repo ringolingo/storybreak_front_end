@@ -1,43 +1,61 @@
 import React, {useState, useEffect} from 'react';
 import {Editor, EditorState, convertToRaw, convertFromRaw, Modifier} from 'draft-js';
+import axios from 'axios';
 import './WritingDesk.css';
 
-const WritingDesk = () => {
+const WritingDesk = ({currentStoryId, currentStoryTitle}) => {
     const [editorState, setEditorState] = useState(
         () => EditorState.createEmpty(),
     );
 
-    // TODO 
-    // 1. want to make it so cursor loads at: end of work or last updated place
-    // 2. update to make axios request and upload saved story
-    // (unless new)
-    //
-    // useEffect(() => {
-    //     editorState.focus();
-    // }, []);
+    useEffect(() => {
+        axios
+            .get(`/api/stories/${currentStoryId}`)
+            .then(response => loadWork(response.data.draft_raw))
+            .catch(error => console.log(error.response))
+    }, []);
 
     const onEditorChange = (editorState) => {
         setEditorState(editorState);
     };
 
     const saveWork = () => {
-        // TODO this seems to work out for just saving in page
-        // make sure that when it's actually loading from database it still works
-
-        // get current content state and convert to raw
+        // get current content state, convert to raw, convert to JSON
         const contentState = editorState.getCurrentContent();
-        console.log(contentState);
         const raw = convertToRaw(contentState);
+        const updatedWork = {
+            title: currentStoryTitle,
+            draft_raw: JSON.stringify(raw),
+        }
 
-        // TODO send raw content state to backend
-        // TODO get updated content from backend
+        // send updated work to server
+        axios
+            .put(`/api/stories/${currentStoryId}/`, updatedWork)
+            .then(response => console.log(response.data))
+            .catch(error => console.log(error.response));
+    };
 
-        // create new editor state from raw content
-        // (to be replaced with content from backend)
-        // and save in state
-        const updatedContent = convertFromRaw(raw);
-        const newEditorFromContent = EditorState.createWithContent(updatedContent);
-        setEditorState(newEditorFromContent);
+    const loadWork = (rawJson) => {
+        const destringed = JSON.parse(rawJson);
+        const newContentState = convertFromRaw(destringed);
+        const newEditor = EditorState.createWithContent(newContentState);
+        setEditorState(newEditor);
+    }
+
+    const addScene = () => {
+        const currentContent = editorState.getCurrentContent();
+        const selection = editorState.getSelection();
+
+        const sceneBreakId = Math.ceil(Math.random()*10000);
+        setNewSceneBreakId(sceneBreakId);
+        const newEntity = currentContent.createEntity('SCENE', 'IMMUTABLE', sceneBreakId);
+        const entityKey = currentContent.getLastCreatedEntityKey();
+
+        const textToUse = '***' + sceneBreakId + '***'
+        const textWithEntity = Modifier.insertText(currentContent, selection, textToUse, null, entityKey);
+
+        const updatedEditorState = EditorState.push(editorState, textWithEntity, 'insert-characters')
+        setEditorState(updatedEditorState);
     };
 
     return (
@@ -52,7 +70,7 @@ const WritingDesk = () => {
 
             <div className="writing-desk__button-bar d-flex flex-row justify-content-center">
                 <button onClick={saveWork} className="btn btn-primary rounded m-1">Save</button>
-                <button className="btn btn-secondary rounded m-1">Add New Scene</button>
+                <button onClick={addScene} className="btn btn-secondary rounded m-1">Add New Scene</button>
             </div>
         </div>
     )
