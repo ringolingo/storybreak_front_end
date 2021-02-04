@@ -4,9 +4,8 @@ import axios from 'axios';
 const StoryStats = () => {
     const [allStories, setAllStories] = useState([]);
 
-    // callback to app so app remembers what the current story is
-    // how to callback without preventing event (and thus making link useless?)
-    // have this as a component Writing Desk renders?
+    // if I'm going to keep this there's no reason for it to have its own axios call
+    // should just get info handed down in props
 
     const generateTitles = allStories.map((story, i) => {
         return <p key={i}>{story.title} - last updated {story.last_updated}</p>

@@ -19,15 +19,24 @@ function App() {
   const [currentStoryTitle, setCurrentStoryTitle] = useState('');
 
   useEffect(() => {
-    const titlesAndIds = [];
+    getStories();
+  }, []);
+
+  const getStories = () => {
+    // update index method on backend so get all request just returns title, id, last_updated
+    // but get individual still returns everything?
 
     axios
       .get("/api/stories/")
       .then(response => setAllStories(response.data))
       .catch(error => console.log(error));
-    
-    setAllStories(titlesAndIds);
-  }, []);
+  }
+
+  const updateOneStory = (story) => {
+    // define a callback method so changing a story title in writing desk
+    // tells App to update state 
+    // and current story button will reflect new title
+  }
 
   const selectStory = (event) => {
     setCurrentStoryId(event.target.id);
@@ -85,7 +94,7 @@ function App() {
 
           <Switch>
             <Route path='/desk' render={() => (
-              <WritingDesk currentStoryId={currentStoryId} currentStoryTitle={currentStoryTitle}/>
+              <WritingDesk selectedStoryId={currentStoryId} selectedStoryTitle={currentStoryTitle} refreshStories={updateOneStory}/>
             )} />
 
             <Route path='/corkboard' render={() => (
