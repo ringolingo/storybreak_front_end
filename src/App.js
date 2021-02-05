@@ -106,7 +106,7 @@ function App() {
         </div>
       </Router>
 
-      <p>footer placeholder</p>
+      {/* <p>footer placeholder</p> */}
     </div>
   );
 }
