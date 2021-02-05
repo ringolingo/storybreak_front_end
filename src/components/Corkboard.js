@@ -30,7 +30,7 @@ const placeholderCards = [
     }
 ]
 
-const Corkboard = () => {
+const Corkboard = ({currentStoryId}) => {
     const [cards, setCards] = useState(placeholderCards);
     const [showModal, setShowModal] = useState(false);
     const [currentCard, setCurrentCard] = useState({
@@ -65,11 +65,11 @@ const Corkboard = () => {
     });
 
     // TODO refactor to connect with backend
-    const addCard = () => {
+    const addCard = (scene_id = cards.length + 1, summary = '') => {
         const expandedCards = [...cards];
         const newCard = {
-            id: cards.length + 1,
-            logline: '',
+            id: scene_id,
+            logline: summary,
             location: cards.length
         }
         expandedCards.push(newCard);
