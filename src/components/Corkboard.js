@@ -30,7 +30,7 @@ const placeholderCards = [
     }
 ]
 
-const Corkboard = ({currentStoryId}) => {
+const Corkboard = ({currentStoryId, backToDesk}) => {
     const [cards, setCards] = useState(placeholderCards);
     const [showModal, setShowModal] = useState(false);
     const [currentCard, setCurrentCard] = useState({
@@ -143,6 +143,8 @@ const Corkboard = ({currentStoryId}) => {
 
     return (
         <div className="corkboard__wall">
+            <button className="btn btn-block story-list__title-change" onClick={backToDesk}>Go To Writing Desk</button>
+
             <div className="corkboard__frame rounded p-5 d-flex justify-content-center align-items-center">
                 <div className="corkboard__board d-flex flex-wrap justify-content-center p-2">{cardComponents}</div>
             </div>
