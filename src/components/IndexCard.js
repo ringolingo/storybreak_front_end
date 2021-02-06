@@ -2,23 +2,24 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import './IndexCard.css'
 
-const IndexCard = ({id, logline, location, showCard}) => {
+const IndexCard = ({id, card_summary, location, showCard}) => {
 
     const popOutCard = () => {
-        showCard({id: id, logline: logline, location: location});
+        console.log('double click registered')
+        showCard({id: id, card_summary: card_summary, location: location});
     };
 
     return (
         <div onDoubleClick={popOutCard} className="card">
             <div className="card-body">
-                <p>{logline}</p>
+                <p>{card_summary}</p>
             </div>
         </div>
     )
 };
 
 IndexCard.propTypes = {
-    logline: PropTypes.string,
+    card_summary: PropTypes.string,
     id: PropTypes.number,
 };
 

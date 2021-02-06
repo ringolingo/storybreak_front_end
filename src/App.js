@@ -20,6 +20,7 @@ function App() {
   const [showTitleModal, setShowTitleModal] = useState(false);
   const [amendedTitle, setAmendedTitle] = useState('');
   const [inBoardView, setInBoardView] = useState(false);
+  const [showNewTitleModal, setShowNewTitleModal] = useState(false);
 
 
   // app gets and remembers all stories
@@ -69,7 +70,53 @@ function App() {
     )
   }
 
+   // TODO can I streamline this so there's just one modal for changing/making new title?
+  const openNewTitle = () => {
+    console.log('createnew passed to opennewtitle')
+    setShowNewTitleModal(true);
+  }
+
+  const closeNewTitle = () => {
+    setShowNewTitleModal(false);
+  }
+
+  const newTitleInProgress = (event) => {
+    setAmendedTitle(event.target.value);
+  }
+
+  const newTitleModal = () => {
+    return (
+        <Modal show={showNewTitleModal} onHide={closeNewTitle} animation={false} backdrop='static' centered={true} >    
+            <Modal.Body>
+                <Form>
+                    <Form.Group>
+                        <Form.Label>What do you want the title of your story to be?</Form.Label>
+                        <Form.Control as='textarea' value={amendedTitle} onChange={newTitleInProgress} />
+                    </Form.Group>
+                </Form>
+            </Modal.Body>
+        
+            <Modal.Footer>
+                <Button variant="primary" onClick={createNew}>
+                    Set Title
+                </Button>
+            </Modal.Footer>
+        </Modal>
+    )
+  }
+
   const createNew = () => {
+    axios
+      .post('/api/stories/', {title: amendedTitle})
+      .then(response => console.log(response))
+      .catch(error => console.log(error));
+
+    closeNewTitle();
+    setAmendedTitle('');
+
+    // post with amended title
+    // set amended title to ''
+
     // addScene();
     // ask for title
     // (if response empty, return and leave function)
@@ -92,7 +139,7 @@ function App() {
       <div className="story-list">
         <h3 className="story-list__header">What would you like to work on today?</h3>
           {generateTitles}
-          <button className="btn story-list__title btn-primary" onClick={createNew}>Start A New Story (this button not yet operational)</button>
+          <button className="btn story-list__title btn-primary" onClick={openNewTitle}>Start A New Story (this button not yet operational)</button>
       </div>
     )
   }
@@ -121,11 +168,17 @@ function App() {
     saveWork(currentStoryTitle)
   }
 
+  // update this to also get & save a card summary
+  // maybe even have that also be added into the body of the text?
+  // after the textwithentity do another round of insertText
+  // fields needed to send with post request - entity_key (by which I actually mean sceneBreakId not entityKey, nice naming choices),
+  // content_blocks (send at this point, or wait for that to be updated on a save?),
+  // card_summary (if procured), location (for now just figure out with it being last), and story (currentStoryId)
   const addScene = () => {
     const currentContent = editorState.getCurrentContent();
     const selection = editorState.getSelection();
 
-    const sceneBreakId = Math.ceil(Math.random()*10000);
+    const sceneBreakId = Math.random().toString(36).substring(2,10);
     const newEntity = currentContent.createEntity('SCENE', 'IMMUTABLE', sceneBreakId);
     const entityKey = currentContent.getLastCreatedEntityKey();
 
@@ -180,6 +233,8 @@ function App() {
     )
   }
 
+
+  // lets user switch between views
   const goToStoryBoard = () => {
     setInBoardView(true);
   }
@@ -195,13 +250,13 @@ function App() {
   const storyInProgressView = () => {
       if (inBoardView) {
         return (
-          <Corkboard currentStoryTitle={currentStoryId} backToDesk={goToWritingDesk} />
+          <Corkboard currentStoryId={currentStoryId} backToDesk={goToWritingDesk} />
         )
       } else {
         return (
           <div className="writing-desk__desk">
             
-            {changeStory()}
+            {/* {changeStory()} */}
             <button className="btn btn-block story-list__title-change" onClick={goToStoryBoard}>Go To Story Board</button>
             
             <div className="writing-desk__editor container border border-dark rounded w-75 h-75">
@@ -226,22 +281,11 @@ function App() {
 
   return (
     <div>
+      {currentStoryId ? changeStory() : null }
       {currentStoryId ? storyInProgressView() : noStorySelectedView()}
+      {newTitleModal()}
     </div>
   );
 }
 
 export default App;
-
-  {/*  the old router set up:
-    <div>
-      <Router>
-        <Link to='/corkboard'>Corkboard</Link>
-        <Switch>
-          <Route path='/corkboard' render={() => (
-            <Corkboard currentStoryId={currentStoryId}/>
-          )} />
-        </Switch>
-      </Router>
-    </div> 
-  */}

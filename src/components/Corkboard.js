@@ -1,4 +1,5 @@
 import React, {useState, useEffect} from 'react';
+import axios from 'axios';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
@@ -10,41 +11,60 @@ import './Corkboard.css';
 const placeholderCards = [
     {
         id: 1,
-        logline: 'it was a dark and stormy night',
+        card_summary: 'it was a dark and stormy night',
         location: 0,
     },
     {
         id: 2,
-        logline: 'there was a boy named Eustace Clarence Scrubb, and he almost deserved it',
+        card_summary: 'there was a boy named Eustace Clarence Scrubb, and he almost deserved it',
         location: 1,
     },
     {
         id: 3,
-        logline: 'it was love at first sight',
+        card_summary: 'it was love at first sight',
         location: 2
     },
     {
         id: 4,
-        logline: 'it is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife',
+        card_summary: 'it is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife',
         location: 3
     }
 ]
 
 const Corkboard = ({currentStoryId, backToDesk}) => {
-    const [cards, setCards] = useState(placeholderCards);
+    const [cards, setCards] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [currentCard, setCurrentCard] = useState({
         id: null,
-        logline: '',
+        card_summary: '',
         location: null,
+        content_blocks: [],
+        story: null,
+        entity_key: '',
     });
+
+    // gets and remembers the scene cards associated with the current story
+    useEffect(() => {
+        getScenes();
+    }, []);
+    
+    const getScenes = () => {
+        axios
+            .get(`api/scenes/?story=${currentStoryId}`)
+            .then(response => setCards(response.data))
+            .catch(error => console.log(error));
+    }
+    
 
     const popOutCard = (card) => {
         const selectedCard = {
             id: card.id,
-            logline: card.logline,
+            card_summary: card.card_summary,
             location: card.location,
-        }
+            content_blocks: card.content_blocks,
+            story: card.story,
+            entity_key: card.entity_key,
+            }
         setCurrentCard(selectedCard);
         setShowModal(true);
     }
@@ -53,24 +73,46 @@ const Corkboard = ({currentStoryId, backToDesk}) => {
         setShowModal(false);
         setCurrentCard({
             id: null,
-            logline: null,
+            card_summary: '',
             location: null,
+            content_blocks: [],
+            story: null,
+            entity_key: '',
         })
     }
 
     const cardComponents = cards.map((card, i) => {
         return (
-            <IndexCard logline={card.logline} key={card.id} id={card.id} showCard={popOutCard} location={card.location} />
+            <IndexCard card_summary={card.card_summary} key={card.id} id={card.id} showCard={popOutCard} location={card.location} />
         )
     });
 
     // TODO refactor to connect with backend
-    const addCard = (scene_id = cards.length + 1, summary = '') => {
+    // adding a card will need to first add a scene from App
+    // (can call a callback function that gets handed to it)
+    // then get entity_key and content_blocks from App
+    // and id from HTTP response
+    // (after the callback function, App sets these 3 in state and hands down as props -- would corkboard have then? or wouldn't work until next render?)
+    // what happens in actual corkboard - can handle getting summary,
+    // and setting story to currentStoryId
+    // location should technically be based off location of scene but for now let's just have it default to last
+    // which can be handled in corkboard
+    // WAIT no
+    // app doesn't need to hand any of this info down, it will be saved to the scene object that gets made
+    // when it adds a scene
+    // add card needs to make the callback to make a scene
+    // then do a new getScenes request
+    // (then ideally identify the new card and pop it out)
+    // (but at the very least that way it'll be on the board and the user can double click it)
+    const addCard = () => {
         const expandedCards = [...cards];
         const newCard = {
-            id: scene_id,
-            logline: summary,
-            location: cards.length
+            // id: null,
+            // card_summary: '',
+            // location: null,
+            // content_blocks: [],
+            // story: currentStoryId,
+            // entity_key: '',
         }
         expandedCards.push(newCard);
         setCards(expandedCards);
@@ -78,14 +120,22 @@ const Corkboard = ({currentStoryId, backToDesk}) => {
         popOutCard(newCard);
     };
 
+    // TODO refactor to send update to backend
     const changeCardSummary = (event) => {
         const updatedCard = {
             id: currentCard.id,
-            logline: event.target.value,
+            card_summary: event.target.value,
             location: currentCard.location,
+            content_blocks: currentCard.content_blocks,
+            story: currentStoryId,
+            entity_key: currentCard.entity_key,
         };
 
         setCurrentCard(updatedCard);
+        axios
+            .put()
+            .then(response => console.log(response.data))
+            .catch(error => console.log(error))
     };
 
     // TODO - refactor to send changes to back end
@@ -118,6 +168,7 @@ const Corkboard = ({currentStoryId, backToDesk}) => {
         closeModal();
     }
 
+    // TODO communicate with backend
     const moveCard = (mod) => {
         if ((currentCard.location + mod >= cards.length) || (currentCard.location + mod < 0)) {
             closeModal();
@@ -166,7 +217,7 @@ const Corkboard = ({currentStoryId, backToDesk}) => {
                             <Form.Label>Scene Summary</Form.Label>
                             <Form.Control
                                 as='textarea'
-                                value={currentCard.logline}
+                                value={currentCard.card_summary}
                                 onChange={changeCardSummary}
                             />
                         </Form.Group>
