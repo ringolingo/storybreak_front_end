@@ -50,8 +50,17 @@ const Corkboard = ({currentStoryId, backToDesk}) => {
     
     const getScenes = () => {
         axios
-            .get(`api/scenes/?story=${currentStoryId}`)
-            .then(response => setCards(response.data))
+            .get(`api/scenes`)
+            .then(response => {
+                const allCards = response.data;
+                console.log(response.data);
+                console.log(typeof currentStoryId);
+                console.log(typeof response.data[0]['story'])
+                const rightCards = allCards.filter(card => card['story'] == currentStoryId);
+                console.log(rightCards);
+                
+                setCards(rightCards);
+            })
             .catch(error => console.log(error));
     }
     
