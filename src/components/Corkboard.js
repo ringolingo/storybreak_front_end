@@ -27,12 +27,10 @@ const Corkboard = ({currentStoryId, backToDesk}) => {
     }, []);
     
     const getScenes = () => {
-        console.log('running get scenes')
         axios
             .get(`api/scenes`)
             .then(response => {
-                const rightCards = response.data.filter(card => card['story'] == currentStoryId);
-                setCards(rightCards);
+                setCards(response.data.filter(card => card['story'] == currentStoryId));
             })
             .catch(error => console.log(error));
     }
@@ -121,59 +119,60 @@ const Corkboard = ({currentStoryId, backToDesk}) => {
 
     // TODO - refactor to send changes to back end
     const saveCardChanges = () => {
-        // const updatedCards = [];
-        
-        // cards.forEach((card) => {
-        //     if (card.id === currentCard.id) {
-        //         updatedCards.push(currentCard);
-        //     } else {
-        //         updatedCards.push(card);
-        //     }
-        // });
-
-        // setCards(updatedCards);
-        console.log('sending request')
         axios
             .put(`api/scenes/${currentCard.id}/`, currentCard)
             .then(response => console.log(response.data))
             .catch(error => console.log(error.response.data))
 
-        console.log('request sent, running get scenes')
-        getScenes();
-        console.log('back in savecardchange')
+        const updatedCards = [];
+        cards.forEach((card) => {
+            if (card.id === currentCard.id) {
+                updatedCards.push(currentCard);
+            } else {
+                updatedCards.push(card);
+            }
+        });
+        setCards(updatedCards);
         closeModal();
     };
 
-    // TODO refactor to send changes to back end
-    // send delete request and get new scenes
     const deleteCard = () => {
-        const trimmedCards = [];
+        axios
+            .delete(`api/scenes/${currentCard.id}/`)
+            .then(response => console.log(response.data))
+            .catch(error => console.log(error.response.data))
 
+        const trimmedCards = [];
         cards.forEach((card) => {
             if (card.id !== currentCard.id) {
                 trimmedCards.push(card);
             }
         });
-
         setCards(trimmedCards);
         closeModal();
     }
 
-    // TODO communicate with backend
     const moveCard = (mod) => {
         if ((currentCard.location + mod >= cards.length) || (currentCard.location + mod < 0)) {
             closeModal();
             return;
         }
-        
-        const shuffleCards = cards;
 
+        saveCardChanges();
+        
+        const shuffleCards = [...cards];
         shuffleCards.splice(currentCard.location, 1)
         shuffleCards.splice(currentCard.location + mod, 0, currentCard)
 
         const updateLocations = shuffleCards.map((card, index) => {
             const updateCard = {...card};
             updateCard.location = index;
+
+            axios
+                .put(`api/scenes/${updateCard.id}/`, updateCard)
+                .then(response => console.log(response.data))
+                .catch(error => console.log(error.response.data))
+
             return updateCard;
         });
         setCards(updateLocations);
