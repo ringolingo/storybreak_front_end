@@ -6,30 +6,8 @@ import Form from 'react-bootstrap/Form';
 
 import IndexCard from './IndexCard';
 import './Corkboard.css';
+import { CardBody } from 'reactstrap';
 
-
-const placeholderCards = [
-    {
-        id: 1,
-        card_summary: 'it was a dark and stormy night',
-        location: 0,
-    },
-    {
-        id: 2,
-        card_summary: 'there was a boy named Eustace Clarence Scrubb, and he almost deserved it',
-        location: 1,
-    },
-    {
-        id: 3,
-        card_summary: 'it was love at first sight',
-        location: 2
-    },
-    {
-        id: 4,
-        card_summary: 'it is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife',
-        location: 3
-    }
-]
 
 const Corkboard = ({currentStoryId, backToDesk}) => {
     const [cards, setCards] = useState([]);
@@ -49,16 +27,11 @@ const Corkboard = ({currentStoryId, backToDesk}) => {
     }, []);
     
     const getScenes = () => {
+        console.log('running get scenes')
         axios
             .get(`api/scenes`)
             .then(response => {
-                const allCards = response.data;
-                console.log(response.data);
-                console.log(typeof currentStoryId);
-                console.log(typeof response.data[0]['story'])
-                const rightCards = allCards.filter(card => card['story'] == currentStoryId);
-                console.log(rightCards);
-                
+                const rightCards = response.data.filter(card => card['story'] == currentStoryId);
                 setCards(rightCards);
             })
             .catch(error => console.log(error));
@@ -92,7 +65,10 @@ const Corkboard = ({currentStoryId, backToDesk}) => {
 
     const cardComponents = cards.map((card, i) => {
         return (
-            <IndexCard card_summary={card.card_summary} key={card.id} id={card.id} showCard={popOutCard} location={card.location} />
+            <IndexCard 
+                key={card.id} 
+                showCard={popOutCard} 
+                card={card}/>
         )
     });
 
@@ -141,29 +117,35 @@ const Corkboard = ({currentStoryId, backToDesk}) => {
         };
 
         setCurrentCard(updatedCard);
-        axios
-            .put()
-            .then(response => console.log(response.data))
-            .catch(error => console.log(error))
     };
 
     // TODO - refactor to send changes to back end
     const saveCardChanges = () => {
-        const updatedCards = [];
+        // const updatedCards = [];
         
-        cards.forEach((card) => {
-            if (card.id === currentCard.id) {
-                updatedCards.push(currentCard);
-            } else {
-                updatedCards.push(card);
-            }
-        });
+        // cards.forEach((card) => {
+        //     if (card.id === currentCard.id) {
+        //         updatedCards.push(currentCard);
+        //     } else {
+        //         updatedCards.push(card);
+        //     }
+        // });
 
-        setCards(updatedCards);
+        // setCards(updatedCards);
+        console.log('sending request')
+        axios
+            .put(`api/scenes/${currentCard.id}/`, currentCard)
+            .then(response => console.log(response.data))
+            .catch(error => console.log(error.response.data))
+
+        console.log('request sent, running get scenes')
+        getScenes();
+        console.log('back in savecardchange')
         closeModal();
     };
 
     // TODO refactor to send changes to back end
+    // send delete request and get new scenes
     const deleteCard = () => {
         const trimmedCards = [];
 
