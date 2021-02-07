@@ -105,25 +105,28 @@ function App() {
     )
   }
 
+  // TODO update this to have the proper draft_raw content
+  // ...if any draft_raw, for that matter
+  // ALSO TODO have the new work spawn one scene immediately to start with
   const createNew = () => {
+    if (amendedTitle === '') {
+      closeNewTitle();
+      return
+    }
+
     axios
-      .post('/api/stories/', {title: amendedTitle})
-      .then(response => console.log(response))
+      .post('/api/stories/', {title: amendedTitle, draft_raw: "I need to be updated with real content! :D"})
+      .then(response => {
+        setCurrentStoryId(response.data.id)
+        setCurrentStoryTitle(response.data.title)
+        const expandedStories = [...allStories]
+        expandedStories.push(response.data);
+        setAllStories(expandedStories);
+      })
       .catch(error => console.log(error));
 
     closeNewTitle();
     setAmendedTitle('');
-
-    // post with amended title
-    // set amended title to ''
-
-    // addScene();
-    // ask for title
-    // (if response empty, return and leave function)
-    // (else)
-    // post to /api/stories/
-    // from response, fish out the ID
-    // set this title and ID as current title and ID
   }
 
 
