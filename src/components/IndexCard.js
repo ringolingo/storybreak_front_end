@@ -22,7 +22,7 @@ IndexCard.propTypes = {
         card_summary: PropTypes.string,
         id: PropTypes.number,
         location: PropTypes.number,
-        content_blocks: PropTypes.array,
+        content_blocks: PropTypes.string,
         story: PropTypes.number,
         entity_key: PropTypes.string,
     }),

@@ -6,7 +6,7 @@ import Form from 'react-bootstrap/Form';
 
 import IndexCard from './IndexCard';
 import './Corkboard.css';
-import { CardBody } from 'reactstrap';
+// import { CardBody } from 'reactstrap';
 
 
 const Corkboard = ({currentStoryId, backToDesk}) => {
@@ -28,11 +28,17 @@ const Corkboard = ({currentStoryId, backToDesk}) => {
     
     const getScenes = () => {
         axios
-            .get(`api/scenes`)
+            .get(`api/scenes/?story=${currentStoryId}`)
             .then(response => {
                 setCards(response.data.filter(card => card['story'] == currentStoryId));
             })
-            .catch(error => console.log(error));
+            .catch(error => console.log(error.response.data));
+        // axios
+        // .get(`api/scenes`)
+        // .then(response => {
+        //     setCards(response.data.filter(card => card['story'] == currentStoryId));
+        // })
+        // .catch(error => console.log(error.response.data));
     }
     
 
