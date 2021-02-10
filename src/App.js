@@ -1,6 +1,6 @@
 import React, {useState, useEffect} from 'react';
 import {Editor, EditorState, convertToRaw, convertFromRaw, Modifier} from 'draft-js';
-import {BrowserRouter as Router, Switch, Route, Link} from 'react-router-dom';
+// import {BrowserRouter as Router, Switch, Route, Link} from 'react-router-dom';
 import axios from 'axios';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
@@ -20,7 +20,11 @@ function App() {
   const [showTitleModal, setShowTitleModal] = useState(false);
   const [amendedTitle, setAmendedTitle] = useState('');
   const [inBoardView, setInBoardView] = useState(false);
+  // TODO do I need two separate title setting modals?
   const [showNewTitleModal, setShowNewTitleModal] = useState(false);
+  const [showNewSceneModal, setShowNewSceneModal] = useState(false);
+  const [newSceneSummary, setNewSceneSummary] = useState('');
+  const [newEntityKey, setNewEntityKey] = useState('');
 
 
   // app gets and remembers all stories
@@ -44,8 +48,11 @@ function App() {
 
     axios
       .get(`/api/stories/${event.target.id}`)
-      .then(response => loadWork(response.data.draft_raw))
-      .catch(error => console.log(error.response))
+      .then(response => {
+        console.log(response)
+        loadWork(response.data.draft_raw)
+      })
+      .catch(error => console.log(error))
   };
 
   const loadWork = (rawJson) => {
@@ -71,8 +78,8 @@ function App() {
   }
 
    // TODO can I streamline this so there's just one modal for changing/making new title?
+   // ALSO TODO: updating the title saves it in the DB but doesn't trigger rerender so change doesn't show
   const openNewTitle = () => {
-    console.log('createnew passed to opennewtitle')
     setShowNewTitleModal(true);
   }
 
@@ -148,6 +155,12 @@ function App() {
   }
 
 
+  // TODO App lets you delete a work?
+  // should be a fairly simple delete request to api/stories/{id}
+  // ...for ease of use, call on currentStoryId
+  // so deletion to be done from the writing desk view
+
+
   // app updates state and database according to the user's work
   const onEditorChange = (editorState) => {
     setEditorState(editorState);
@@ -161,10 +174,12 @@ function App() {
         draft_raw: JSON.stringify(raw),
     }
 
+    console.log(JSON.stringify(raw))
+    console.log(allStories[0]['last_updated'])
     axios
         .put(`/api/stories/${currentStoryId}/`, updatedWork)
         .then(response => console.log(response.data))
-        .catch(error => console.log(error.response));
+        .catch(error => console.log(error.response.data));
   };
 
   const saveExistingWork = () => {
@@ -182,8 +197,11 @@ function App() {
     const selection = editorState.getSelection();
 
     const sceneBreakId = Math.random().toString(36).substring(2,10);
-    const newEntity = currentContent.createEntity('SCENE', 'IMMUTABLE', sceneBreakId);
+    currentContent.createEntity('SCENE', 'IMMUTABLE', sceneBreakId);
     const entityKey = currentContent.getLastCreatedEntityKey();
+    
+    setNewEntityKey(sceneBreakId);
+    openNewScene();
 
     const textToUse = '***' + sceneBreakId + '***'
     const textWithEntity = Modifier.insertText(currentContent, selection, textToUse, null, entityKey);
@@ -191,6 +209,62 @@ function App() {
     const updatedEditorState = EditorState.push(editorState, textWithEntity, 'insert-characters')
     setEditorState(updatedEditorState);
   };
+
+  const openNewScene = () => {
+    setShowNewSceneModal(true);
+  }
+
+  const closeNewScene = () => {
+    setShowNewSceneModal(false);
+    setNewSceneSummary('');
+  }
+
+  const newSceneInProgress = (event) => {
+    setNewSceneSummary(event.target.value);
+  }
+
+  const saveSceneSummary = () => {
+    const newScene = {
+      card_summary: newSceneSummary,
+      location: null,
+      story: currentStoryId,
+      entity_key: newEntityKey
+    }
+
+    axios
+      .post("/api/scenes/", newScene)
+      .then(response => console.log(response.data))
+      .catch(error => console.log(error.response.data))
+
+    closeNewScene();
+  }
+
+  const newSceneModal = () => {
+    return (
+        <Modal show={showNewSceneModal} onHide={closeNewScene} animation={false} backdrop='static' centered={true} >    
+            <Modal.Body>
+                <Form>
+                    <Form.Group>
+                        <Form.Label>What's a quick summary of what happens in this scene?</Form.Label>
+                        <Form.Control as='textarea' value={newSceneSummary} onChange={newSceneInProgress} />
+                    </Form.Group>
+                </Form>
+            </Modal.Body>
+        
+            <Modal.Footer>
+                <Button variant="primary" onClick={saveSceneSummary}>
+                    Make New Scene
+                </Button>
+            </Modal.Footer>
+        </Modal>
+    )
+  }
+
+
+  // TODO save when user clicks to switch to card view
+  // so that story and cards can get synced up on the back end
+
+
 
 
   // app lets user change story title
@@ -207,8 +281,21 @@ function App() {
     setAmendedTitle(event.target.value);
   }
 
+  // this makes it so new title shows up as desired on the button at top
+  // but old title still shows in list of all works until refresh
   const saveTitleChange = () => {
     saveWork(amendedTitle);
+    setCurrentStoryTitle(amendedTitle);
+    const storiesPlusUpdate = allStories.map((story) => {
+      if (story.id == currentStoryId) {
+        const updatedStory = {...story}
+        story.title = amendedTitle;
+        return updatedStory;
+      } else {
+        return story
+      }
+    })
+    setAllStories(storiesPlusUpdate);
     closeTitleModal();
   }
 
@@ -239,6 +326,7 @@ function App() {
 
   // lets user switch between views
   const goToStoryBoard = () => {
+    saveWork(currentStoryTitle)
     setInBoardView(true);
   }
 
@@ -287,6 +375,7 @@ function App() {
       {currentStoryId ? changeStory() : null }
       {currentStoryId ? storyInProgressView() : noStorySelectedView()}
       {newTitleModal()}
+      {newSceneModal()}
     </div>
   );
 }
