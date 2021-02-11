@@ -32,6 +32,10 @@ function App() {
     getStories();
   }, []);
 
+  useEffect(() => {
+    getCurrentStory(currentStoryId);
+  }, [inBoardView]);
+
   const getStories = () => {
     axios
       .get("/api/stories/")
@@ -45,15 +49,17 @@ function App() {
   const selectStory = (event) => {
     setCurrentStoryId(event.target.id);
     setCurrentStoryTitle(event.target.title);
-
-    axios
-      .get(`/api/stories/${event.target.id}`)
-      .then(response => {
-        console.log(response)
-        loadWork(response.data.draft_raw)
-      })
-      .catch(error => console.log(error))
+    getCurrentStory(event.target.id);
   };
+
+  const getCurrentStory = (story) => {
+    axios
+    .get(`/api/stories/${story}`)
+    .then(response => {
+      loadWork(response.data.draft_raw)
+    })
+    .catch(error => console.log(error.response.data))
+  }
 
   const loadWork = (rawJson) => {
     const destringed = JSON.parse(rawJson);
@@ -114,6 +120,7 @@ function App() {
 
   // TODO update this to have the proper draft_raw content
   // ...if any draft_raw, for that matter
+  // use editorstate get current content - raww - stingify?
   // ALSO TODO have the new work spawn one scene immediately to start with
   const createNew = () => {
     if (amendedTitle === '') {
@@ -124,10 +131,10 @@ function App() {
     axios
       .post('/api/stories/', {title: amendedTitle, draft_raw: "I need to be updated with real content! :D"})
       .then(response => {
-        setCurrentStoryId(response.data.id)
-        setCurrentStoryTitle(response.data.title)
+        setCurrentStoryId(response.data.data.id)
+        setCurrentStoryTitle(response.data.data.title)
         const expandedStories = [...allStories]
-        expandedStories.push(response.data);
+        expandedStories.push(response.data.data);
         setAllStories(expandedStories);
       })
       .catch(error => console.log(error));
@@ -164,7 +171,7 @@ function App() {
   // app updates state and database according to the user's work
   const onEditorChange = (editorState) => {
     setEditorState(editorState);
-    console.log(convertToRaw(editorState.getCurrentContent()));
+    // console.log(convertToRaw(editorState.getCurrentContent()));
   };
 
   const saveWork = (title) => {
@@ -187,29 +194,34 @@ function App() {
     saveWork(currentStoryTitle)
   }
 
-  // update this to also get & save a card summary
-  // maybe even have that also be added into the body of the text?
-  // after the textwithentity do another round of insertText
-  // fields needed to send with post request - entity_key (by which I actually mean sceneBreakId not entityKey, nice naming choices),
-  // content_blocks (send at this point, or wait for that to be updated on a save?),
-  // card_summary (if procured), location (for now just figure out with it being last), and story (currentStoryId)
+
+  // writer can create new scenes from either view
   const addScene = () => {
+    // create new content block for scene break
     const splitEditorState = splitLine();
     const currentContent = splitEditorState.getCurrentContent();
     const selection = splitEditorState.getSelection();
     
+    // create the entity with the scene break id
     const sceneBreakId = Math.random().toString(36).substring(2,10);
     currentContent.createEntity('SCENE', 'IMMUTABLE', sceneBreakId);
     const entityKey = currentContent.getLastCreatedEntityKey();
-
+    
+    // get a summary for the new scene and post to the api
     setNewEntityKey(sceneBreakId);
     openNewScene();
-        console.log("I'm adding the entity!")
+    
+    // create the content block the entity will be associated with
     const textToUse = '***' + sceneBreakId + '***'
     const textWithEntity = Modifier.insertText(currentContent, selection, textToUse, null, entityKey);
     const updatedEditorState = EditorState.push(splitEditorState, textWithEntity, 'insert-characters')
     setEditorState(updatedEditorState);
+    
+    // create new content block for user's next input
     splitLine(updatedEditorState);
+    
+    // save the work with its new content blocks to the database
+    saveWork(currentStoryTitle);
   };
 
   const splitLine = (es=editorState) => {
@@ -217,7 +229,6 @@ function App() {
     // not attached to a preexisting content block, not attached to the next thing the user writes
     const currentContent = es.getCurrentContent();
     const selection = es.getSelection();
-    console.log("I'm splitting the line!")
     const newLine = Modifier.splitBlock(currentContent, selection)
     const editorWithBreak = EditorState.push(es, newLine, "split-block")
     setEditorState(editorWithBreak)
@@ -226,12 +237,12 @@ function App() {
 
   
   const openNewScene = () => {
+    setNewSceneSummary('');
     setShowNewSceneModal(true);
   }
 
   const closeNewScene = () => {
     setShowNewSceneModal(false);
-    // setNewSceneSummary('');
   }
 
   const newSceneInProgress = (event) => {
@@ -274,12 +285,6 @@ function App() {
         </Modal>
     )
   }
-
-
-  // TODO save when user clicks to switch to card view
-  // so that story and cards can get synced up on the back end
-
-
 
 
   // app lets user change story title
@@ -341,6 +346,7 @@ function App() {
 
   // lets user switch between views
   const goToStoryBoard = () => {
+    // set cursor to end (selection to end/focus to end/w/e? so that scenes inserted in card view go to end)
     saveWork(currentStoryTitle)
     setInBoardView(true);
   }
