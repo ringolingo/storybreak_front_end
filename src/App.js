@@ -1,5 +1,5 @@
 import React, {useState, useEffect} from 'react';
-import {Editor, EditorState, convertToRaw, convertFromRaw, Modifier} from 'draft-js';
+import {Editor, EditorState, convertToRaw, convertFromRaw, Modifier, moveSelectionToEnd, genKey, ContentBlock, ContentState, List, getBlockMap, getKey, toOrderedMap} from 'draft-js';
 // import {BrowserRouter as Router, Switch, Route, Link} from 'react-router-dom';
 import axios from 'axios';
 import Modal from 'react-bootstrap/Modal';
@@ -164,6 +164,7 @@ function App() {
   // app updates state and database according to the user's work
   const onEditorChange = (editorState) => {
     setEditorState(editorState);
+    console.log(convertToRaw(editorState.getCurrentContent()));
   };
 
   const saveWork = (title) => {
@@ -193,30 +194,44 @@ function App() {
   // content_blocks (send at this point, or wait for that to be updated on a save?),
   // card_summary (if procured), location (for now just figure out with it being last), and story (currentStoryId)
   const addScene = () => {
-    const currentContent = editorState.getCurrentContent();
-    const selection = editorState.getSelection();
-
+    const splitEditorState = splitLine();
+    const currentContent = splitEditorState.getCurrentContent();
+    const selection = splitEditorState.getSelection();
+    
     const sceneBreakId = Math.random().toString(36).substring(2,10);
     currentContent.createEntity('SCENE', 'IMMUTABLE', sceneBreakId);
     const entityKey = currentContent.getLastCreatedEntityKey();
-    
+
     setNewEntityKey(sceneBreakId);
     openNewScene();
-
+        console.log("I'm adding the entity!")
     const textToUse = '***' + sceneBreakId + '***'
     const textWithEntity = Modifier.insertText(currentContent, selection, textToUse, null, entityKey);
-
-    const updatedEditorState = EditorState.push(editorState, textWithEntity, 'insert-characters')
+    const updatedEditorState = EditorState.push(splitEditorState, textWithEntity, 'insert-characters')
     setEditorState(updatedEditorState);
+    splitLine(updatedEditorState);
   };
 
+  const splitLine = (es=editorState) => {
+    // function makes sure that the new scene break is made on its own separate content block
+    // not attached to a preexisting content block, not attached to the next thing the user writes
+    const currentContent = es.getCurrentContent();
+    const selection = es.getSelection();
+    console.log("I'm splitting the line!")
+    const newLine = Modifier.splitBlock(currentContent, selection)
+    const editorWithBreak = EditorState.push(es, newLine, "split-block")
+    setEditorState(editorWithBreak)
+    return editorWithBreak
+  }
+
+  
   const openNewScene = () => {
     setShowNewSceneModal(true);
   }
 
   const closeNewScene = () => {
     setShowNewSceneModal(false);
-    setNewSceneSummary('');
+    // setNewSceneSummary('');
   }
 
   const newSceneInProgress = (event) => {
@@ -341,7 +356,7 @@ function App() {
   const storyInProgressView = () => {
       if (inBoardView) {
         return (
-          <Corkboard currentStoryId={currentStoryId} backToDesk={goToWritingDesk} />
+          <Corkboard currentStoryId={currentStoryId} backToDesk={goToWritingDesk} addSceneCallback={addScene} />
         )
       } else {
         return (

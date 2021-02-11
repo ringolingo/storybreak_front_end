@@ -9,7 +9,7 @@ import './Corkboard.css';
 // import { CardBody } from 'reactstrap';
 
 
-const Corkboard = ({currentStoryId, backToDesk}) => {
+const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
     const [cards, setCards] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [currentCard, setCurrentCard] = useState({
@@ -95,6 +95,7 @@ const Corkboard = ({currentStoryId, backToDesk}) => {
     // (but at the very least that way it'll be on the board and the user can double click it)
     const addCard = () => {
         const expandedCards = [...cards];
+        addSceneCallback(true);
         const newCard = {
             // id: null,
             // card_summary: '',
@@ -103,10 +104,12 @@ const Corkboard = ({currentStoryId, backToDesk}) => {
             // story: currentStoryId,
             // entity_key: '',
         }
-        expandedCards.push(newCard);
-        setCards(expandedCards);
+        // expandedCards.push(newCard);
+        // setCards(expandedCards);
 
-        popOutCard(newCard);
+        // popOutCard(newCard);
+        // in terms of board being able to see new card after created -- make an axios call, maybe?
+        // in terms of actually getting card made -- hm.
     };
 
     // TODO refactor to send update to backend
