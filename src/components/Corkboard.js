@@ -16,7 +16,7 @@ const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
         id: null,
         card_summary: '',
         location: null,
-        content_blocks: [],
+        content_blocks: '',
         story: null,
         entity_key: '',
     });
@@ -30,15 +30,9 @@ const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
         axios
             .get(`api/scenes/?story=${currentStoryId}`)
             .then(response => {
-                setCards(response.data.filter(card => card['story'] == currentStoryId));
+                setCards(response.data);
             })
             .catch(error => console.log(error.response.data));
-        // axios
-        // .get(`api/scenes`)
-        // .then(response => {
-        //     setCards(response.data.filter(card => card['story'] == currentStoryId));
-        // })
-        // .catch(error => console.log(error.response.data));
     }
     
 
@@ -147,7 +141,7 @@ const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
 
     const deleteCard = () => {
         axios
-            .delete(`api/scenes/${currentCard.id}/`)
+            .delete(`api/scenes/${currentCard.id}/`, {data: currentCard})
             .then(response => console.log(response.data))
             .catch(error => console.log(error.response.data))
 
@@ -162,17 +156,24 @@ const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
     }
 
     const moveCard = (mod) => {
+        // prevents card from being moved outside the range of existing scenes
         if ((currentCard.location + mod >= cards.length) || (currentCard.location + mod < 0)) {
             closeModal();
             return;
         }
-
+        
+        // saves in case user has made summary changes they haven't saved
         saveCardChanges();
         
+        // makes a new array of all scene objects
+        // removes the active scene from the array
+        // adds teh active scene back in moved one place forward or backward
         const shuffleCards = [...cards];
         shuffleCards.splice(currentCard.location, 1)
         shuffleCards.splice(currentCard.location + mod, 0, currentCard)
 
+        // iterates through the scenes, reassinging each card's location value
+        // to its current index in the reordered array
         const updateLocations = shuffleCards.map((card, index) => {
             const updateCard = {...card};
             updateCard.location = index;
@@ -184,8 +185,10 @@ const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
 
             return updateCard;
         });
+        // saves the reordered scenes with the correctly updated locations in state
         setCards(updateLocations);
 
+        // updates the currentCard object in state to have the correct location
         const movedCard = {...currentCard};
         movedCard.location = currentCard.location + mod;
         setCurrentCard(movedCard);
