@@ -32,10 +32,6 @@ function App() {
     getStories();
   }, []);
 
-  useEffect(() => {
-    getCurrentStory(currentStoryId);
-  }, [inBoardView]);
-
   const getStories = () => {
     axios
       .get("/api/stories/")
@@ -58,7 +54,7 @@ function App() {
     .then(response => {
       loadWork(response.data.draft_raw)
     })
-    .catch(error => console.log(error.response.data))
+    .catch(error => console.log(error))
   }
 
   const loadWork = (rawJson) => {
@@ -129,12 +125,12 @@ function App() {
     }
 
     axios
-      .post('/api/stories/', {title: amendedTitle, draft_raw: "I need to be updated with real content! :D"})
+      .post('/api/stories/', {title: amendedTitle, draft_raw: "{\"blocks\":[],\"entityMap\":{}}"})
       .then(response => {
-        setCurrentStoryId(response.data.data.id)
-        setCurrentStoryTitle(response.data.data.title)
+        setCurrentStoryId(response.data.id)
+        setCurrentStoryTitle(response.data.title)
         const expandedStories = [...allStories]
-        expandedStories.push(response.data.data);
+        expandedStories.push(response.data);
         setAllStories(expandedStories);
       })
       .catch(error => console.log(error));
@@ -187,7 +183,7 @@ function App() {
     axios
         .put(`/api/stories/${currentStoryId}/`, updatedWork)
         .then(response => console.log(response.data))
-        .catch(error => console.log(error.response.data));
+        .catch(error => console.log(error));
   };
 
   const saveExistingWork = () => {
@@ -260,7 +256,7 @@ function App() {
     axios
       .post("/api/scenes/", newScene)
       .then(response => console.log(response.data))
-      .catch(error => console.log(error.response.data))
+      .catch(error => console.log(error))
 
     closeNewScene();
   }
@@ -352,6 +348,7 @@ function App() {
   }
 
   const goToWritingDesk = () => {
+    getCurrentStory(currentStoryId);
     setInBoardView(false);
   }
 
