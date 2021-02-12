@@ -152,22 +152,34 @@ function App() {
       <div className="story-list">
         <h3 className="story-list__header">What would you like to work on today?</h3>
           {generateTitles}
-          <button className="btn story-list__title btn-primary" onClick={openNewTitle}>Start A New Story (this button not yet operational)</button>
+          <button className="btn story-list__title btn-primary" onClick={openNewTitle}>Start A New Story</button>
       </div>
     )
   }
 
 
-  // TODO App lets you delete a work?
-  // should be a fairly simple delete request to api/stories/{id}
-  // ...for ease of use, call on currentStoryId
-  // so deletion to be done from the writing desk view
+  const deleteWork = () => {
+    const trimmedStories = allStories.map((story) => {
+      if (story.id !== currentStoryId) {
+        return story;
+      }
+    })
+    setAllStories(trimmedStories)
 
+    axios
+      .delete(`/api/stories/${currentStoryId}/`)
+      .then(response => console.log(response.data))
+      .catch(error => console.log(error))
+
+    unselectStory();
+  }
 
   // app updates state and database according to the user's work
   const onEditorChange = (editorState) => {
     setEditorState(editorState);
-    // console.log(convertToRaw(editorState.getCurrentContent()));
+    const raw = convertToRaw(editorState.getCurrentContent())
+    console.log(raw);
+    // console.log(Object.keys(raw.entityMap).length);
   };
 
   const saveWork = (title) => {
@@ -208,7 +220,7 @@ function App() {
     openNewScene();
     
     // create the content block the entity will be associated with
-    const textToUse = '***' + sceneBreakId + '***'
+    const textToUse = '***'
     const textWithEntity = Modifier.insertText(currentContent, selection, textToUse, null, entityKey);
     const updatedEditorState = EditorState.push(splitEditorState, textWithEntity, 'insert-characters')
     setEditorState(updatedEditorState);
@@ -245,10 +257,13 @@ function App() {
     setNewSceneSummary(event.target.value);
   }
 
-  const saveSceneSummary = () => {
+  const saveNewScene = () => {
+    const raw = convertToRaw(editorState.getCurrentContent())
+    const location = Object.keys(raw.entityMap).length
+
     const newScene = {
       card_summary: newSceneSummary,
-      location: null,
+      location: location,
       story: currentStoryId,
       entity_key: newEntityKey
     }
@@ -261,6 +276,7 @@ function App() {
     closeNewScene();
   }
 
+  
   const newSceneModal = () => {
     return (
         <Modal show={showNewSceneModal} onHide={closeNewScene} animation={false} backdrop='static' centered={true} >    
@@ -274,7 +290,7 @@ function App() {
             </Modal.Body>
         
             <Modal.Footer>
-                <Button variant="primary" onClick={saveSceneSummary}>
+                <Button variant="primary" onClick={saveNewScene}>
                     Make New Scene
                 </Button>
             </Modal.Footer>
@@ -380,6 +396,7 @@ function App() {
                 <button onClick={saveExistingWork} className="btn btn-primary rounded m-1">Save</button>
                 <button onClick={addScene} className="btn btn-secondary rounded m-1">Add New Scene</button>
                 <button onClick={openTitleChange} className="btn btn-secondary rounded m-1">Change Title</button>
+                <button onClick={deleteWork} className="btn btn-danger rounded m-1">Delete Story</button>
             </div>
     
             {changeTitleModal()}
