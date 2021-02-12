@@ -55,7 +55,11 @@ function App() {
     .then(response => {
       loadWork(response.data.draft_raw)
     })
-    .catch(error => console.log(error))
+    .catch(error => {
+      console.log(error);
+      setCurrentStoryId(null);
+      setCurrentStoryTitle(null);
+    })
   }
 
   const loadWork = (rawJson) => {

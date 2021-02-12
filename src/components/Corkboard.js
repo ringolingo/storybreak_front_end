@@ -78,7 +78,6 @@ const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
     // or maybe just have the corkboard with all cards, they can reopen any one they want
     const addCard = () => {
         const expandedCards = [...cards];
-        addSceneCallback(true);
         const newCard = {
             // id: null,
             // card_summary: '',
@@ -87,10 +86,12 @@ const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
             // story: currentStoryId,
             // entity_key: '',
         }
+
         // expandedCards.push(newCard);
         // setCards(expandedCards);
 
         // popOutCard(newCard);
+        addSceneCallback(true);
     };
 
     // TODO refactor to send update to backend
