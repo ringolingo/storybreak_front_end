@@ -25,6 +25,7 @@ function App() {
   const [showNewSceneModal, setShowNewSceneModal] = useState(false);
   const [newSceneSummary, setNewSceneSummary] = useState('');
   const [newEntityKey, setNewEntityKey] = useState('');
+  const [newSceneId, setNewSceneId] = useState(null);
 
 
   // app gets and remembers all stories
@@ -204,7 +205,7 @@ function App() {
 
 
   // writer can create new scenes from either view
-  const addScene = () => {
+  const addSceneBlocks = () => {
     // create new content block for scene break
     const splitEditorState = splitLine();
     const currentContent = splitEditorState.getCurrentContent();
@@ -217,8 +218,7 @@ function App() {
     
     // get a summary for the new scene and post to the api
     setNewEntityKey(sceneBreakId);
-    openNewScene();
-    
+
     // create the content block the entity will be associated with
     const textToUse = '***'
     const textWithEntity = Modifier.insertText(currentContent, selection, textToUse, null, entityKey);
@@ -227,10 +227,46 @@ function App() {
     
     // create new content block for user's next input
     splitLine(updatedEditorState);
+
+    console.log(newSceneId)
+    axios
+      .put(`api/scenes/${newSceneId}/`, {entity_key: sceneBreakId, story: currentStoryId})
+      .then(response => console.log(response))
+      .catch(error => console.log(error))
     
     // save the work with its new content blocks to the database
     saveWork(currentStoryTitle);
   };
+
+  // currently in place scene -- messing with savenewscene
+  // // writer can create new scenes from either view
+  // const addScene = () => {
+  //   // create new content block for scene break
+  //   const splitEditorState = splitLine();
+  //   const currentContent = splitEditorState.getCurrentContent();
+  //   const selection = splitEditorState.getSelection();
+    
+  //   // create the entity with the scene break id
+  //   const sceneBreakId = Math.random().toString(36).substring(2,10);
+  //   currentContent.createEntity('SCENE', 'IMMUTABLE', sceneBreakId);
+  //   const entityKey = currentContent.getLastCreatedEntityKey();
+    
+  //   // get a summary for the new scene and post to the api
+  //   setNewEntityKey(sceneBreakId);
+  //   openNewScene();
+    
+  //   // create the content block the entity will be associated with
+  //   const textToUse = '***'
+  //   const textWithEntity = Modifier.insertText(currentContent, selection, textToUse, null, entityKey);
+  //   const updatedEditorState = EditorState.push(splitEditorState, textWithEntity, 'insert-characters')
+  //   setEditorState(updatedEditorState);
+    
+  //   // create new content block for user's next input
+  //   splitLine(updatedEditorState);
+    
+  //   // save the work with its new content blocks to the database
+  //   saveWork(currentStoryTitle);
+  // };
 
   const splitLine = (es=editorState) => {
     // function makes sure that the new scene break is made on its own separate content block
@@ -257,6 +293,10 @@ function App() {
     setNewSceneSummary(event.target.value);
   }
 
+  // what if this runs FIRST, posting a card with summary, location, and story
+  // and this is what is called by corkboard
+  // then addscene does a put request to give the scene its entitykey and content blocks
+  // need to make sure that this returns the newly made scene's id or saves it in state, so it can be used by add Scene
   const saveNewScene = () => {
     const raw = convertToRaw(editorState.getCurrentContent())
     const location = Object.keys(raw.entityMap).length
@@ -265,16 +305,45 @@ function App() {
       card_summary: newSceneSummary,
       location: location,
       story: currentStoryId,
-      entity_key: newEntityKey
     }
 
     axios
       .post("/api/scenes/", newScene)
-      .then(response => console.log(response.data))
-      .catch(error => console.log(error))
-
-    closeNewScene();
+      .then(response => {
+        const newId = response.data.id;
+        console.log(newId)
+        console.log(newId)
+        console.log(newId)
+        console.log(newId)
+        setNewSceneId(newId)
+        console.log(newSceneId)
+      })
+      .then(() => {
+        closeNewScene();
+        addSceneBlocks();    
+      })
+      .catch(error => console.log(error.response))
   }
+
+  // currently in place method that gets called about halfway through addscene
+  // const saveNewScene = () => {
+  //   const raw = convertToRaw(editorState.getCurrentContent())
+  //   const location = Object.keys(raw.entityMap).length
+
+  //   const newScene = {
+  //     card_summary: newSceneSummary,
+  //     location: location,
+  //     story: currentStoryId,
+  //     entity_key: newEntityKey
+  //   }
+
+  //   axios
+  //     .post("/api/scenes/", newScene)
+  //     .then(response => console.log(response.data))
+  //     .catch(error => console.log(error))
+
+  //   closeNewScene();
+  // }
 
   
   const newSceneModal = () => {
@@ -375,7 +444,7 @@ function App() {
   const storyInProgressView = () => {
       if (inBoardView) {
         return (
-          <Corkboard currentStoryId={currentStoryId} backToDesk={goToWritingDesk} addSceneCallback={addScene} />
+          <Corkboard currentStoryId={currentStoryId} backToDesk={goToWritingDesk} addSceneCallback={openNewScene} />
         )
       } else {
         return (
@@ -394,7 +463,7 @@ function App() {
     
             <div className="writing-desk__button-bar d-flex flex-row justify-content-center">
                 <button onClick={saveExistingWork} className="btn btn-primary rounded m-1">Save</button>
-                <button onClick={addScene} className="btn btn-secondary rounded m-1">Add New Scene</button>
+                <button onClick={openNewScene} className="btn btn-secondary rounded m-1">Add New Scene</button>
                 <button onClick={openTitleChange} className="btn btn-secondary rounded m-1">Change Title</button>
                 <button onClick={deleteWork} className="btn btn-danger rounded m-1">Delete Story</button>
             </div>
