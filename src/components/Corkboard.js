@@ -70,23 +70,12 @@ const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
         )
     });
 
-    // TODO refactor to connect with backend
-    // adding a card will need to first add a scene from App
-    // (can call a callback function that gets handed to it)
-    // then get entity_key and content_blocks from App
-    // and id from HTTP response
-    // (after the callback function, App sets these 3 in state and hands down as props -- would corkboard have then? or wouldn't work until next render?)
-    // what happens in actual corkboard - can handle getting summary,
-    // and setting story to currentStoryId
-    // location should technically be based off location of scene but for now let's just have it default to last
-    // which can be handled in corkboard
-    // WAIT no
-    // app doesn't need to hand any of this info down, it will be saved to the scene object that gets made
-    // when it adds a scene
-    // add card needs to make the callback to make a scene
-    // then do a new getScenes request
-    // (then ideally identify the new card and pop it out)
-    // (but at the very least that way it'll be on the board and the user can double click it)
+    // TODO - this does hand over to addScene and make a scene object that gets saved in db
+    // but currently the card doesn't show up because the location is null
+    // check card does show up as is should once the back end synching objects works
+    // -- do a new getScenes request?
+    // and then maybe have it so that the new is set to current? maybe also pops open?
+    // or maybe just have the corkboard with all cards, they can reopen any one they want
     const addCard = () => {
         const expandedCards = [...cards];
         addSceneCallback(true);
@@ -102,8 +91,6 @@ const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
         // setCards(expandedCards);
 
         // popOutCard(newCard);
-        // in terms of board being able to see new card after created -- make an axios call, maybe?
-        // in terms of actually getting card made -- hm.
     };
 
     // TODO refactor to send update to backend
@@ -140,19 +127,32 @@ const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
     };
 
     const deleteCard = () => {
-        axios
-            .delete(`api/scenes/${currentCard.id}/`, {data: currentCard})
-            .then(response => console.log(response.data))
-            .catch(error => console.log(error.response.data))
-
+        let mod = 0;
         const trimmedCards = [];
-        cards.forEach((card) => {
+
+        cards.forEach((card, index) => {
+            // keeps all cards except deleted one, but updates their locations
+            // locally in state and in the database with a put request
             if (card.id !== currentCard.id) {
-                trimmedCards.push(card);
+                const updated = {...card}
+                updated.location = index - mod
+                trimmedCards.push(updated)
+
+                axios
+                .put(`api/scenes/${updated.id}/`, updated)
+                .then(response => console.log(response.data))
+                .catch(error => console.log(error.response.data))
+            } else {
+                // deletes the card we want deleted and tracks whether we've gotten to that card yet in our order
+                mod++;
+                axios
+                    .delete(`api/scenes/${currentCard.id}/`)
+                    .then(response => console.log(response.data))
+                    .catch(error => console.log(error.response.data))
             }
-        });
+        })
+        // saves the reordered scenes with the correctly updated locations in state
         setCards(trimmedCards);
-        closeModal();
     }
 
     const moveCard = (mod) => {
