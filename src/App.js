@@ -205,7 +205,7 @@ function App() {
 
 
   // writer can create new scenes from either view
-  const addSceneBlocks = () => {
+  const addSceneBlocks = (newScene) => {
     // create new content block for scene break
     const splitEditorState = splitLine();
     const currentContent = splitEditorState.getCurrentContent();
@@ -227,13 +227,14 @@ function App() {
     
     // create new content block for user's next input
     splitLine(updatedEditorState);
+    newScene.entity_key = sceneBreakId;
+    console.log(newScene)
 
-    console.log(newSceneId)
     axios
-      .put(`api/scenes/${newSceneId}/`, {entity_key: sceneBreakId, story: currentStoryId})
+      .post("/api/scenes/", newScene)
       .then(response => console.log(response))
       .catch(error => console.log(error))
-    
+  
     // save the work with its new content blocks to the database
     saveWork(currentStoryTitle);
   };
@@ -307,22 +308,25 @@ function App() {
       story: currentStoryId,
     }
 
-    axios
-      .post("/api/scenes/", newScene)
-      .then(response => {
-        const newId = response.data.id;
-        console.log(newId)
-        console.log(newId)
-        console.log(newId)
-        console.log(newId)
-        setNewSceneId(newId)
-        console.log(newSceneId)
-      })
-      .then(() => {
-        closeNewScene();
-        addSceneBlocks();    
-      })
-      .catch(error => console.log(error.response))
+    closeNewScene();
+    addSceneBlocks(newScene);    
+
+    // axios
+    //   .post("/api/scenes/", newScene)
+    //   .then(response => {
+    //     const newId = response.data.id;
+    //     console.log(newId)
+    //     console.log(newId)
+    //     console.log(newId)
+    //     console.log(newId)
+    //     setNewSceneId(newId)
+    //     console.log(newSceneId)
+    //   })
+    //   .then(() => {
+    //     closeNewScene();
+    //     addSceneBlocks();    
+    //   })
+    //   .catch(error => console.log(error.response))
   }
 
   // currently in place method that gets called about halfway through addscene
