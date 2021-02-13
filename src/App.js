@@ -377,7 +377,7 @@ function App() {
   const storyInProgressView = () => {
       if (inBoardView) {
         return (
-          <Corkboard currentStoryId={currentStoryId} backToDesk={goToWritingDesk} addSceneCallback={openNewScene} />
+          <Corkboard currentStoryId={currentStoryId} backToDesk={goToWritingDesk} addSceneCallback={addSceneBlocks} />
         )
       } else {
         return (

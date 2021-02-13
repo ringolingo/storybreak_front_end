@@ -70,28 +70,35 @@ const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
         )
     });
 
-    // TODO - this does hand over to addScene and make a scene object that gets saved in db
-    // but currently the card doesn't show up because the location is null
-    // check card does show up as is should once the back end synching objects works
-    // -- do a new getScenes request?
-    // and then maybe have it so that the new is set to current? maybe also pops open?
-    // or maybe just have the corkboard with all cards, they can reopen any one they want
-    const addCard = () => {
-        const expandedCards = [...cards];
+    const openNewCard = () => {
+        setShowModal(true);
+    }
+
+    // modal opens - user types in their summary - current event listener should handle that fine
+    // event listener just full on updates the entire card in state, does not just set summary in a separate state! cool
+    // do we need anything else before we dive into posting the card? don't think so
+    
+    const saveNewCard = () => {
+        const sceneBreakId = Math.random().toString(36).substring(2,10);
+
         const newCard = {
-            // id: null,
-            // card_summary: '',
-            // location: null,
-            // content_blocks: [],
-            // story: currentStoryId,
-            // entity_key: '',
+            card_summary: currentCard.card_summary,
+            location: cards.length,
+            story: currentStoryId,
+            entity_key: sceneBreakId
         }
 
-        // expandedCards.push(newCard);
-        // setCards(expandedCards);
+        axios
+            .post("/api/scenes/", newCard)
+            .then(response => console.log(response.data))
+            .catch(error => console.log(error.response))
 
-        // popOutCard(newCard);
-        addSceneCallback(true);
+        const expandedCards = [...cards];
+        expandedCards.push(newCard);
+        setCards(expandedCards);
+
+        closeModal();
+        addSceneCallback(newCard);
     };
 
     // TODO refactor to send update to backend
@@ -209,7 +216,7 @@ const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
             </div>
 
             <div className="corkboard__button-bar d-flex justify-content-center">
-                <button onClick={addCard} className="btn btn-medium btn-primary">Add New Card</button>
+                <button onClick={openNewCard} className="btn btn-medium btn-primary">Add New Card</button>
             </div>
 
             <Modal 
@@ -233,17 +240,12 @@ const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
                 </Modal.Body>
             
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={closeModal}>
-                        Close
-                    </Button>
-                    <Button variant="primary" onClick={saveCardChanges}>
-                        Save Changes
-                    </Button>
-                    {currentCard.location === 0 ? null : <Button variant="info" onClick={() => moveCard(-1)}>Move Scene Earlier</Button>}
-                    {currentCard.location === cards.length - 1 ? null : <Button variant="info" onClick={() => moveCard(1)}>Move Scene Later</Button>}
-                    <Button variant="danger" onClick={deleteCard}>
-                        Delete Scene
-                    </Button>
+                    <Button variant="secondary" onClick={closeModal}>Close</Button>
+                    {currentCard.id ? null : <Button variant="primary" onClick={saveNewCard}>Save New Scene</Button>}
+                    {currentCard.id ? <Button variant="primary" onClick={saveCardChanges}>Save Changes</Button> : null }
+                    {(currentCard.location === 0 || !currentCard.id) ? null : <Button variant="info" onClick={() => moveCard(-1)}>Move Scene Earlier</Button>}
+                    {(currentCard.location === cards.length - 1 || !currentCard.id) ? null : <Button variant="info" onClick={() => moveCard(1)}>Move Scene Later</Button>}
+                    {currentCard.id ? <Button variant="danger" onClick={deleteCard}>Delete Scene</Button> : null}
                 </Modal.Footer>
             </Modal>
         </div>
