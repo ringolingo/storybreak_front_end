@@ -158,7 +158,7 @@ const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
                 // deletes the card we want deleted and tracks whether we've gotten to that card yet in our order
                 mod++;
                 axios
-                    .delete(`api/scenes/${currentCard.id}/`)
+                    .put(`api/scenes/${currentCard.id}/`, {...card, location: null})
                     .then(response => console.log(response.data))
                     .catch(error => console.log(error.response.data))
             }
