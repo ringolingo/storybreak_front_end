@@ -11,7 +11,8 @@ import './Corkboard.css';
 
 const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
     const [cards, setCards] = useState([]);
-    const [showModal, setShowModal] = useState(false);
+    const [showNewCardModal, setShowNewCardModal] = useState(false);
+    const [showChangeCardModal, setShowChangeCardModal] = useState(false);
     const [currentCard, setCurrentCard] = useState({
         id: null,
         card_summary: '',
@@ -37,6 +38,7 @@ const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
     
 
     const popOutCard = (card) => {
+        console.log('popoutcard')
         const selectedCard = {
             id: card.id,
             card_summary: card.card_summary,
@@ -44,13 +46,14 @@ const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
             content_blocks: card.content_blocks,
             story: card.story,
             entity_key: card.entity_key,
-            }
+        }
         setCurrentCard(selectedCard);
-        setShowModal(true);
+        setShowChangeCardModal(true);
     }
     
     const closeModal = () => {
-        setShowModal(false);
+        setShowNewCardModal(false);
+        setShowChangeCardModal(false);
         setCurrentCard({
             id: null,
             card_summary: '',
@@ -71,7 +74,7 @@ const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
     });
 
     const openNewCard = () => {
-        setShowModal(true);
+        setShowNewCardModal(true);
     }
 
     // modal opens - user types in their summary - current event listener should handle that fine
@@ -207,20 +210,42 @@ const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
         });
     }
 
-    return (
-        <div className="corkboard__wall">
-            <button className="btn btn-block story-list__title-change" onClick={backToDesk}>Go To Writing Desk</button>
 
-            <div className="corkboard__frame rounded p-5 d-flex justify-content-center align-items-center">
-                <div className="corkboard__board d-flex flex-wrap justify-content-center p-2">{cardComponents}</div>
-            </div>
-
-            <div className="corkboard__button-bar d-flex justify-content-center">
-                <button onClick={openNewCard} className="btn btn-medium btn-primary">Add New Card</button>
-            </div>
-
+    const newCardModal = () => {
+        return (
             <Modal 
-                show={showModal}
+                show={showNewCardModal}
+                onHide={closeModal}
+                animation={false}
+                backdrop='static'
+                centered={true}
+            >    
+                <Modal.Body>
+                    <Form>
+                        <Form.Group>
+                            <Form.Label>What's a quick summary of what happens in this scene?</Form.Label>
+                            <Form.Control
+                                as='textarea'
+                                value={currentCard.card_summary}
+                                onChange={changeCardSummary}
+                            />
+                        </Form.Group>
+                    </Form>
+                </Modal.Body>
+            
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={closeModal}>Close</Button>
+                    <Button variant="primary" onClick={saveNewCard}>Save New Scene</Button>
+                </Modal.Footer>
+            </Modal>
+        )
+    }
+
+
+    const changeCardModal = () => {
+        return (
+            <Modal 
+                show={showChangeCardModal}
                 onHide={closeModal}
                 animation={false}
                 backdrop='static'
@@ -241,13 +266,29 @@ const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
             
                 <Modal.Footer>
                     <Button variant="secondary" onClick={closeModal}>Close</Button>
-                    {currentCard.id ? null : <Button variant="primary" onClick={saveNewCard}>Save New Scene</Button>}
-                    {currentCard.id ? <Button variant="primary" onClick={saveCardChanges}>Save Changes</Button> : null }
-                    {(currentCard.location === 0 || !currentCard.id) ? null : <Button variant="info" onClick={() => moveCard(-1)}>Move Scene Earlier</Button>}
-                    {(currentCard.location === cards.length - 1 || !currentCard.id) ? null : <Button variant="info" onClick={() => moveCard(1)}>Move Scene Later</Button>}
-                    {currentCard.id ? <Button variant="danger" onClick={deleteCard}>Delete Scene</Button> : null}
+                    <Button variant="primary" onClick={saveCardChanges}>Save Changes</Button> 
+                    {currentCard.location === 0 ? null : <Button variant="info" onClick={() => moveCard(-1)}>Move Scene Earlier</Button>}
+                    {currentCard.location === cards.length - 1 ? null : <Button variant="info" onClick={() => moveCard(1)}>Move Scene Later</Button>}
+                    <Button variant="danger" onClick={deleteCard}>Delete Scene</Button>
                 </Modal.Footer>
             </Modal>
+        )
+    }
+
+    return (
+        <div className="corkboard__wall">
+            <button className="btn btn-block story-list__title-change" onClick={backToDesk}>Go To Writing Desk</button>
+
+            <div className="corkboard__frame rounded p-5 d-flex justify-content-center align-items-center">
+                <div className="corkboard__board d-flex flex-wrap justify-content-center p-2">{cardComponents}</div>
+            </div>
+
+            <div className="corkboard__button-bar d-flex justify-content-center">
+                <button onClick={openNewCard} className="btn btn-medium btn-primary">Add New Card</button>
+            </div>
+
+            {changeCardModal()}
+            {newCardModal()}
         </div>
     )
 };
