@@ -186,15 +186,15 @@ function App() {
     // console.log(raw);
   };
 
-  const saveWork = (title) => {
-    const contentState = editorState.getCurrentContent();
+  const saveWork = (title, es) => {
+    const contentState = es.getCurrentContent();
     const raw = convertToRaw(contentState);
     const updatedWork = {
         title: title,
         draft_raw: JSON.stringify(raw),
     }
 
-    console.log(JSON.stringify(raw))
+    console.log('savework')
     axios
         .put(`/api/stories/${currentStoryId}/`, updatedWork)
         .then(response => console.log(response.data))
@@ -202,12 +202,13 @@ function App() {
   };
 
   const saveExistingWork = () => {
-    saveWork(currentStoryTitle)
+    saveWork(currentStoryTitle, editorState)
   }
 
 
   // writer can create new scenes from either view
   const addSceneBlocks = (newScene) => {
+    console.log('addscenebreaks')
     // create new content block for scene break, unless first line in story
     let currentContent = editorState.getCurrentContent();
     let editorToUse = editorState;
@@ -231,8 +232,9 @@ function App() {
     setEditorState(updatedEditorState);
     
     // create new content block for user's next input
-    splitLine(updatedEditorState);
-    saveExistingWork();
+    const editorWithSceneBlocks = splitLine(updatedEditorState);
+    return editorWithSceneBlocks;
+    // saveExistingWork();
   };
 
   const splitLine = (es=editorState) => {
@@ -275,9 +277,13 @@ function App() {
       .catch(error => console.log(error.response))
       
     closeNewScene();
-    addSceneBlocks(newScene);      
+    chainSaveFunction(newScene);
   }
 
+  const chainSaveFunction = async newScene => {
+    const editorWithSceneBlocks = await addSceneBlocks(newScene);
+    const savedWork = await saveWork(currentStoryTitle, editorWithSceneBlocks);
+  }
   
   const newSceneModal = () => {
     return (
@@ -318,7 +324,7 @@ function App() {
   // this makes it so new title shows up as desired on the button at top
   // but old title still shows in list of all works until refresh
   const saveTitleChange = () => {
-    saveWork(amendedTitle);
+    saveWork(amendedTitle, editorState);
     setCurrentStoryTitle(amendedTitle);
     const storiesPlusUpdate = allStories.map((story) => {
       if (story.id == currentStoryId) {
@@ -377,7 +383,7 @@ function App() {
   const storyInProgressView = () => {
       if (inBoardView) {
         return (
-          <Corkboard currentStoryId={currentStoryId} backToDesk={goToWritingDesk} addSceneCallback={addSceneBlocks} />
+          <Corkboard currentStoryId={currentStoryId} backToDesk={goToWritingDesk} addSceneCallback={chainSaveFunction} />
         )
       } else {
         return (
