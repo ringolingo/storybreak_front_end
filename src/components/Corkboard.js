@@ -65,6 +65,7 @@ const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
     }
 
     const cardComponents = cards.map((card, i) => {
+        card.story = parseInt(card.story)
         return (
             <IndexCard 
                 key={card.id} 
@@ -164,6 +165,7 @@ const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
         })
         // saves the reordered scenes with the correctly updated locations in state
         setCards(trimmedCards);
+        closeModal();
     }
 
     const moveCard = (mod) => {
