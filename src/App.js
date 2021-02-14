@@ -28,6 +28,7 @@ function App() {
   const [newSceneSummary, setNewSceneSummary] = useState('');
   const [newEntityKey, setNewEntityKey] = useState('');
   const [newSceneId, setNewSceneId] = useState(null);
+  const [user, setUser] = useState('');
 
 
   // app gets and remembers all stories
@@ -40,6 +41,12 @@ function App() {
       .get("/api/stories/")
       .then(response => setAllStories(response.data))
       .catch(error => console.log(error));
+  }
+
+
+  // app gets user login through google
+  const userCallback = (user) => {
+    setUser(user);
   }
 
 
@@ -417,8 +424,7 @@ function App() {
 
   return (
     <div>
-      <Login />
-      <Logout/>
+      {user ? <Logout setUser={userCallback} /> : <Login setUser={userCallback} />}
       {currentStoryId ? changeStory() : null }
       {currentStoryId ? storyInProgressView() : noStorySelectedView()}
       {newTitleModal()}
