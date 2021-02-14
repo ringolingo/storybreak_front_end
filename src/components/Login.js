@@ -1,7 +1,6 @@
 import React from 'react';
 import { GoogleLogin } from 'react-google-login'
 import axios from 'axios';
-// import { refreshTokenSetup } from '../utils/refreshToken';
 
 const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 

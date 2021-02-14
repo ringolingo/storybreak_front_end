@@ -89,7 +89,7 @@ function App() {
   const changeStory = () => {
     return (
       <div>
-        <button className="btn btn-block story-list__title-change" onClick={unselectStory}>Currently on {currentStoryTitle} - Choose A Different Story</button>
+        <button className="btn btn-block story-list__title-change" onClick={unselectStory}>Choose A Different Story</button>
       </div>
     )
   }
@@ -424,8 +424,12 @@ function App() {
 
   return (
     <div>
-      {user ? <Logout setUser={userCallback} /> : <Login setUser={userCallback} />}
-      {currentStoryId ? changeStory() : null }
+      <div className="d-flex justify-content-between">
+        {currentStoryId ? changeStory() : null }
+        {currentStoryId ? <h3>{currentStoryTitle}</h3> : null }
+        {user ? <Logout setUser={userCallback} /> : <Login setUser={userCallback} />}
+      </div>
+
       {currentStoryId ? storyInProgressView() : noStorySelectedView()}
       {newTitleModal()}
       {newSceneModal()}
