@@ -3,10 +3,10 @@ import { GoogleLogout } from 'react-google-login';
 
 const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 
-const Logout = () => {
+const Logout = ({setUser}) => {
     const onSuccess = () => {
         alert('you have logged out');
-        console.log('logged out');
+        setUser('');
     };
 
     return (

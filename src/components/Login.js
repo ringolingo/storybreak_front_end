@@ -1,10 +1,11 @@
 import React from 'react';
 import { GoogleLogin } from 'react-google-login'
+import axios from 'axios';
 // import { refreshTokenSetup } from '../utils/refreshToken';
 
 const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 
-const Login = () => {
+const Login = ({setUser}) => {
     const onSuccess = (response) => {
         console.log('[Login Success] currentUser:', response.profileObj);
         const userData = {
@@ -13,12 +14,12 @@ const Login = () => {
             first_name: response.profileObj.givenName,
             last_name: response.profileObj.familyName
         }
-        // axios
-        //     .post("/login/", {data: userData})
-        //     .then((response) => {
-        //         setUser(response.data['data']);
-        //  // do I need to navigate somewhere???
-        //     })
+        axios
+            .post("api/users/", userData)
+            .then((response) => {
+                setUser(response.data.email);
+            })
+            .catch((error) => console.log(error.response))
 
         refreshTokenSetup(response);
     };
