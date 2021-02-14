@@ -7,6 +7,8 @@ import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 
 import Corkboard from './components/Corkboard';
+import Login from './components/Login';
+import Logout from './components/Logout';
 import './App.css';
 
 
@@ -74,6 +76,7 @@ function App() {
   const unselectStory = () => {
     setCurrentStoryId(null);
     setCurrentStoryTitle('');
+    getStories();
   }
 
   const changeStory = () => {
@@ -414,6 +417,8 @@ function App() {
 
   return (
     <div>
+      <Login />
+      <Logout/>
       {currentStoryId ? changeStory() : null }
       {currentStoryId ? storyInProgressView() : noStorySelectedView()}
       {newTitleModal()}
