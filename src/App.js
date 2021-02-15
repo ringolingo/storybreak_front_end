@@ -1,12 +1,14 @@
-import React, {useState, useEffect} from 'react';
-import {Editor, EditorState, convertToRaw, convertFromRaw, Modifier} from 'draft-js';
-import {BrowserRouter as Router, Switch, Route, Link} from 'react-router-dom';
+import React, {useState, useEffect, forceRefresh } from 'react';
+import {Editor, EditorState, convertToRaw, convertFromRaw, Modifier, moveSelectionToEnd, genKey, ContentBlock, ContentState, List, getBlockMap, getKey, toOrderedMap} from 'draft-js';
+// import {BrowserRouter as Router, Switch, Route, Link} from 'react-router-dom';
 import axios from 'axios';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 
 import Corkboard from './components/Corkboard';
+import Login from './components/Login';
+import Logout from './components/Logout';
 import './App.css';
 
 
@@ -20,7 +22,18 @@ function App() {
   const [showTitleModal, setShowTitleModal] = useState(false);
   const [amendedTitle, setAmendedTitle] = useState('');
   const [inBoardView, setInBoardView] = useState(false);
+  // TODO do I need two separate title setting modals?
   const [showNewTitleModal, setShowNewTitleModal] = useState(false);
+  const [showNewSceneModal, setShowNewSceneModal] = useState(false);
+  const [newSceneSummary, setNewSceneSummary] = useState('');
+  const [newEntityKey, setNewEntityKey] = useState('');
+  const [newSceneId, setNewSceneId] = useState(null);
+  const [user, setUser] = useState({
+    id: null,
+    email: '',
+    first_name: '',
+    last_name: '',
+  });
 
 
   // app gets and remembers all stories
@@ -28,11 +41,27 @@ function App() {
     getStories();
   }, []);
 
+  useEffect(() => {
+    getStories();
+  }, [user]);
+
   const getStories = () => {
+    console.log('getStories is pulling stories for user number', user.id)
     axios
-      .get("/api/stories/")
-      .then(response => setAllStories(response.data))
-      .catch(error => console.log(error));
+      .get(`/api/stories/?user=${user.id}`)
+      .then(response => {
+        setAllStories(response.data);
+        console.log('getstories response');
+      })
+      .catch(error => console.log(error.response));
+  }
+
+
+  // app gets user login through google
+  const userCallback = (user) => {
+    setUser(user);
+    getStories();
+    console.log('usercallback is running')
   }
 
 
@@ -41,12 +70,21 @@ function App() {
   const selectStory = (event) => {
     setCurrentStoryId(event.target.id);
     setCurrentStoryTitle(event.target.title);
-
-    axios
-      .get(`/api/stories/${event.target.id}`)
-      .then(response => loadWork(response.data.draft_raw))
-      .catch(error => console.log(error.response))
+    getCurrentStory(event.target.id);
   };
+
+  const getCurrentStory = (story) => {
+    axios
+    .get(`/api/stories/${story}`)
+    .then(response => {
+      loadWork(response.data.draft_raw)
+    })
+    .catch(error => {
+      console.log(error.response);
+      setCurrentStoryId(null);
+      setCurrentStoryTitle(null);
+    })
+  }
 
   const loadWork = (rawJson) => {
     const destringed = JSON.parse(rawJson);
@@ -60,19 +98,20 @@ function App() {
   const unselectStory = () => {
     setCurrentStoryId(null);
     setCurrentStoryTitle('');
+    getStories();
   }
 
   const changeStory = () => {
     return (
       <div>
-        <button className="btn btn-block story-list__title-change" onClick={unselectStory}>Currently on {currentStoryTitle} - Choose A Different Story</button>
+        <button className="btn btn-block story-list__title-change" onClick={unselectStory}>Choose A Different Story</button>
       </div>
     )
   }
 
    // TODO can I streamline this so there's just one modal for changing/making new title?
+   // ALSO TODO: updating the title saves it in the DB but doesn't trigger rerender so change doesn't show
   const openNewTitle = () => {
-    console.log('createnew passed to opennewtitle')
     setShowNewTitleModal(true);
   }
 
@@ -105,25 +144,29 @@ function App() {
     )
   }
 
+  // TODO update this to have the proper draft_raw content
+  // ...if any draft_raw, for that matter
+  // use editorstate get current content - raww - stingify?
+  // ALSO TODO have the new work spawn one scene immediately to start with
   const createNew = () => {
+    if (amendedTitle === '') {
+      closeNewTitle();
+      return
+    }
+
     axios
-      .post('/api/stories/', {title: amendedTitle})
-      .then(response => console.log(response))
+      .post('/api/stories/', {title: amendedTitle, draft_raw: "{\"blocks\":[],\"entityMap\":{}}", user: user.id})
+      .then(response => {
+        setCurrentStoryId(response.data.id)
+        setCurrentStoryTitle(response.data.title)
+        const expandedStories = [...allStories]
+        expandedStories.push(response.data);
+        setAllStories(expandedStories);
+      })
       .catch(error => console.log(error));
 
     closeNewTitle();
     setAmendedTitle('');
-
-    // post with amended title
-    // set amended title to ''
-
-    // addScene();
-    // ask for title
-    // (if response empty, return and leave function)
-    // (else)
-    // post to /api/stories/
-    // from response, fish out the ID
-    // set this title and ID as current title and ID
   }
 
 
@@ -139,25 +182,45 @@ function App() {
       <div className="story-list">
         <h3 className="story-list__header">What would you like to work on today?</h3>
           {generateTitles}
-          <button className="btn story-list__title btn-primary" onClick={openNewTitle}>Start A New Story (this button not yet operational)</button>
+          <button className="btn story-list__title btn-primary" onClick={openNewTitle}>Start A New Story</button>
       </div>
     )
   }
 
 
+  const deleteWork = () => {
+    const trimmedStories = allStories.map((story) => {
+      if (story.id !== currentStoryId) {
+        return story;
+      }
+    })
+    setAllStories(trimmedStories)
+
+    axios
+      .delete(`/api/stories/${currentStoryId}/`)
+      .then(response => console.log(response.data))
+      .catch(error => console.log(error))
+
+    unselectStory();
+  }
+
   // app updates state and database according to the user's work
   const onEditorChange = (editorState) => {
     setEditorState(editorState);
+    // const raw = convertToRaw(editorState.getCurrentContent())
+    // console.log(raw);
   };
 
-  const saveWork = (title) => {
-    const contentState = editorState.getCurrentContent();
+  const saveWork = (title, es) => {
+    const contentState = es.getCurrentContent();
     const raw = convertToRaw(contentState);
     const updatedWork = {
         title: title,
         draft_raw: JSON.stringify(raw),
+        user: user.id,
     }
 
+    console.log('savework')
     axios
         .put(`/api/stories/${currentStoryId}/`, updatedWork)
         .then(response => console.log(response.data))
@@ -165,29 +228,109 @@ function App() {
   };
 
   const saveExistingWork = () => {
-    saveWork(currentStoryTitle)
+    saveWork(currentStoryTitle, editorState)
   }
 
-  // update this to also get & save a card summary
-  // maybe even have that also be added into the body of the text?
-  // after the textwithentity do another round of insertText
-  // fields needed to send with post request - entity_key (by which I actually mean sceneBreakId not entityKey, nice naming choices),
-  // content_blocks (send at this point, or wait for that to be updated on a save?),
-  // card_summary (if procured), location (for now just figure out with it being last), and story (currentStoryId)
-  const addScene = () => {
-    const currentContent = editorState.getCurrentContent();
-    const selection = editorState.getSelection();
 
-    const sceneBreakId = Math.random().toString(36).substring(2,10);
-    const newEntity = currentContent.createEntity('SCENE', 'IMMUTABLE', sceneBreakId);
+  // writer can create new scenes from either view
+  const addSceneBlocks = (newScene) => {
+    console.log('addscenebreaks')
+    // create new content block for scene break, unless first line in story
+    let currentContent = editorState.getCurrentContent();
+    let editorToUse = editorState;
+    let selection = editorToUse.getSelection();
+
+    if (convertToRaw(currentContent)['blocks'].length > 1) {
+      editorToUse = splitLine();
+      currentContent = editorToUse.getCurrentContent();
+      selection = editorToUse.getSelection();
+    }
+    
+    // create the entity with the scene break id
+    const sceneBreakId = newScene.entity_key;
+    currentContent.createEntity('SCENE', 'IMMUTABLE', sceneBreakId);
     const entityKey = currentContent.getLastCreatedEntityKey();
-
-    const textToUse = '***' + sceneBreakId + '***'
+    
+    // create the content block the entity will be associated with
+    const textToUse = '***'
     const textWithEntity = Modifier.insertText(currentContent, selection, textToUse, null, entityKey);
-
-    const updatedEditorState = EditorState.push(editorState, textWithEntity, 'insert-characters')
+    const updatedEditorState = EditorState.push(editorToUse, textWithEntity, 'insert-characters')
     setEditorState(updatedEditorState);
+    
+    // create new content block for user's next input
+    const editorWithSceneBlocks = splitLine(updatedEditorState);
+    return editorWithSceneBlocks;
+    // saveExistingWork();
   };
+
+  const splitLine = (es=editorState) => {
+    // function makes sure that the new scene break is made on its own separate content block
+    // not attached to a preexisting content block, not attached to the next thing the user writes
+    const currentContent = es.getCurrentContent();
+    const selection = es.getSelection();
+    const newLine = Modifier.splitBlock(currentContent, selection)
+    const editorWithBreak = EditorState.push(es, newLine, "split-block")
+    setEditorState(editorWithBreak)
+    return editorWithBreak
+  }
+
+  
+  const openNewScene = () => {
+    setNewSceneSummary('');
+    setShowNewSceneModal(true);
+  }
+
+  const closeNewScene = () => {
+    setShowNewSceneModal(false);
+  }
+
+  const newSceneInProgress = (event) => {
+    setNewSceneSummary(event.target.value);
+  }
+
+  const saveNewScene = () => {
+    const sceneBreakId = Math.random().toString(36).substring(2,10)
+
+    const newScene = {
+      card_summary: newSceneSummary,
+      story: currentStoryId,
+      entity_key: sceneBreakId
+    }
+
+    axios
+      .post("/api/scenes/", newScene)
+      .then(response => console.log(response.data))
+      .catch(error => console.log(error.response))
+      
+    closeNewScene();
+    chainSaveFunction(newScene);
+  }
+
+  const chainSaveFunction = async newScene => {
+    const editorWithSceneBlocks = await addSceneBlocks(newScene);
+    const savedWork = await saveWork(currentStoryTitle, editorWithSceneBlocks);
+  }
+  
+  const newSceneModal = () => {
+    return (
+        <Modal show={showNewSceneModal} onHide={closeNewScene} animation={false} backdrop='static' centered={true} >    
+            <Modal.Body>
+                <Form>
+                    <Form.Group>
+                        <Form.Label>What's a quick summary of what happens in this scene?</Form.Label>
+                        <Form.Control as='textarea' value={newSceneSummary} onChange={newSceneInProgress} />
+                    </Form.Group>
+                </Form>
+            </Modal.Body>
+        
+            <Modal.Footer>
+                <Button variant="primary" onClick={saveNewScene}>
+                    Make New Scene
+                </Button>
+            </Modal.Footer>
+        </Modal>
+    )
+  }
 
 
   // app lets user change story title
@@ -204,8 +347,21 @@ function App() {
     setAmendedTitle(event.target.value);
   }
 
+  // this makes it so new title shows up as desired on the button at top
+  // but old title still shows in list of all works until refresh
   const saveTitleChange = () => {
-    saveWork(amendedTitle);
+    saveWork(amendedTitle, editorState);
+    setCurrentStoryTitle(amendedTitle);
+    const storiesPlusUpdate = allStories.map((story) => {
+      if (story.id == currentStoryId) {
+        const updatedStory = {...story}
+        story.title = amendedTitle;
+        return updatedStory;
+      } else {
+        return story
+      }
+    })
+    setAllStories(storiesPlusUpdate);
     closeTitleModal();
   }
 
@@ -236,10 +392,13 @@ function App() {
 
   // lets user switch between views
   const goToStoryBoard = () => {
+    // set cursor to end (selection to end/focus to end/w/e? so that scenes inserted in card view go to end)
+    saveExistingWork()
     setInBoardView(true);
   }
 
   const goToWritingDesk = () => {
+    getCurrentStory(currentStoryId);
     setInBoardView(false);
   }
 
@@ -250,13 +409,12 @@ function App() {
   const storyInProgressView = () => {
       if (inBoardView) {
         return (
-          <Corkboard currentStoryId={currentStoryId} backToDesk={goToWritingDesk} />
+          <Corkboard currentStoryId={currentStoryId} backToDesk={goToWritingDesk} addSceneCallback={chainSaveFunction} />
         )
       } else {
         return (
           <div className="writing-desk__desk">
             
-            {/* {changeStory()} */}
             <button className="btn btn-block story-list__title-change" onClick={goToStoryBoard}>Go To Story Board</button>
             
             <div className="writing-desk__editor container border border-dark rounded w-75 h-75">
@@ -269,8 +427,9 @@ function App() {
     
             <div className="writing-desk__button-bar d-flex flex-row justify-content-center">
                 <button onClick={saveExistingWork} className="btn btn-primary rounded m-1">Save</button>
-                <button onClick={addScene} className="btn btn-secondary rounded m-1">Add New Scene</button>
+                <button onClick={openNewScene} className="btn btn-secondary rounded m-1">Add New Scene</button>
                 <button onClick={openTitleChange} className="btn btn-secondary rounded m-1">Change Title</button>
+                <button onClick={deleteWork} className="btn btn-danger rounded m-1">Delete Story</button>
             </div>
     
             {changeTitleModal()}
@@ -281,9 +440,15 @@ function App() {
 
   return (
     <div>
-      {currentStoryId ? changeStory() : null }
+      <div className="d-flex justify-content-between">
+        {currentStoryId ? changeStory() : null }
+        {currentStoryId ? <h3>{currentStoryTitle}</h3> : null }
+        {user.email ? <Logout setUser={userCallback} /> : <Login setUser={userCallback} />}
+      </div>
+
       {currentStoryId ? storyInProgressView() : noStorySelectedView()}
       {newTitleModal()}
+      {newSceneModal()}
     </div>
   );
 }

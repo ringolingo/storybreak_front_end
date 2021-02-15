@@ -6,39 +6,18 @@ import Form from 'react-bootstrap/Form';
 
 import IndexCard from './IndexCard';
 import './Corkboard.css';
+// import { CardBody } from 'reactstrap';
 
 
-const placeholderCards = [
-    {
-        id: 1,
-        card_summary: 'it was a dark and stormy night',
-        location: 0,
-    },
-    {
-        id: 2,
-        card_summary: 'there was a boy named Eustace Clarence Scrubb, and he almost deserved it',
-        location: 1,
-    },
-    {
-        id: 3,
-        card_summary: 'it was love at first sight',
-        location: 2
-    },
-    {
-        id: 4,
-        card_summary: 'it is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife',
-        location: 3
-    }
-]
-
-const Corkboard = ({currentStoryId, backToDesk}) => {
+const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
     const [cards, setCards] = useState([]);
-    const [showModal, setShowModal] = useState(false);
+    const [showNewCardModal, setShowNewCardModal] = useState(false);
+    const [showChangeCardModal, setShowChangeCardModal] = useState(false);
     const [currentCard, setCurrentCard] = useState({
         id: null,
         card_summary: '',
         location: null,
-        content_blocks: [],
+        content_blocks: '',
         story: null,
         entity_key: '',
     });
@@ -51,12 +30,15 @@ const Corkboard = ({currentStoryId, backToDesk}) => {
     const getScenes = () => {
         axios
             .get(`api/scenes/?story=${currentStoryId}`)
-            .then(response => setCards(response.data))
-            .catch(error => console.log(error));
+            .then(response => {
+                setCards(response.data);
+            })
+            .catch(error => console.log(error.response.data));
     }
     
 
     const popOutCard = (card) => {
+        console.log('popoutcard')
         const selectedCard = {
             id: card.id,
             card_summary: card.card_summary,
@@ -64,13 +46,14 @@ const Corkboard = ({currentStoryId, backToDesk}) => {
             content_blocks: card.content_blocks,
             story: card.story,
             entity_key: card.entity_key,
-            }
+        }
         setCurrentCard(selectedCard);
-        setShowModal(true);
+        setShowChangeCardModal(true);
     }
     
     const closeModal = () => {
-        setShowModal(false);
+        setShowNewCardModal(false);
+        setShowChangeCardModal(false);
         setCurrentCard({
             id: null,
             card_summary: '',
@@ -82,42 +65,44 @@ const Corkboard = ({currentStoryId, backToDesk}) => {
     }
 
     const cardComponents = cards.map((card, i) => {
+        card.story = parseInt(card.story)
         return (
-            <IndexCard card_summary={card.card_summary} key={card.id} id={card.id} showCard={popOutCard} location={card.location} />
+            <IndexCard 
+                key={card.id} 
+                showCard={popOutCard} 
+                card={card}/>
         )
     });
 
-    // TODO refactor to connect with backend
-    // adding a card will need to first add a scene from App
-    // (can call a callback function that gets handed to it)
-    // then get entity_key and content_blocks from App
-    // and id from HTTP response
-    // (after the callback function, App sets these 3 in state and hands down as props -- would corkboard have then? or wouldn't work until next render?)
-    // what happens in actual corkboard - can handle getting summary,
-    // and setting story to currentStoryId
-    // location should technically be based off location of scene but for now let's just have it default to last
-    // which can be handled in corkboard
-    // WAIT no
-    // app doesn't need to hand any of this info down, it will be saved to the scene object that gets made
-    // when it adds a scene
-    // add card needs to make the callback to make a scene
-    // then do a new getScenes request
-    // (then ideally identify the new card and pop it out)
-    // (but at the very least that way it'll be on the board and the user can double click it)
-    const addCard = () => {
-        const expandedCards = [...cards];
+    const openNewCard = () => {
+        setShowNewCardModal(true);
+    }
+
+    // modal opens - user types in their summary - current event listener should handle that fine
+    // event listener just full on updates the entire card in state, does not just set summary in a separate state! cool
+    // do we need anything else before we dive into posting the card? don't think so
+    
+    const saveNewCard = () => {
+        const sceneBreakId = Math.random().toString(36).substring(2,10);
+
         const newCard = {
-            // id: null,
-            // card_summary: '',
-            // location: null,
-            // content_blocks: [],
-            // story: currentStoryId,
-            // entity_key: '',
+            card_summary: currentCard.card_summary,
+            location: cards.length,
+            story: currentStoryId,
+            entity_key: sceneBreakId
         }
+
+        axios
+            .post("/api/scenes/", newCard)
+            .then(response => console.log(response.data))
+            .catch(error => console.log(error.response))
+
+        const expandedCards = [...cards];
         expandedCards.push(newCard);
         setCards(expandedCards);
 
-        popOutCard(newCard);
+        closeModal();
+        addSceneCallback(newCard);
     };
 
     // TODO refactor to send update to backend
@@ -132,16 +117,16 @@ const Corkboard = ({currentStoryId, backToDesk}) => {
         };
 
         setCurrentCard(updatedCard);
-        axios
-            .put()
-            .then(response => console.log(response.data))
-            .catch(error => console.log(error))
     };
 
     // TODO - refactor to send changes to back end
     const saveCardChanges = () => {
+        axios
+            .put(`api/scenes/${currentCard.id}/`, currentCard)
+            .then(response => console.log(response.data))
+            .catch(error => console.log(error.response.data))
+
         const updatedCards = [];
-        
         cards.forEach((card) => {
             if (card.id === currentCard.id) {
                 updatedCards.push(currentCard);
@@ -149,63 +134,120 @@ const Corkboard = ({currentStoryId, backToDesk}) => {
                 updatedCards.push(card);
             }
         });
-
         setCards(updatedCards);
         closeModal();
     };
 
-    // TODO refactor to send changes to back end
     const deleteCard = () => {
+        let mod = 0;
         const trimmedCards = [];
 
-        cards.forEach((card) => {
+        cards.forEach((card, index) => {
+            // keeps all cards except deleted one, but updates their locations
+            // locally in state and in the database with a put request
             if (card.id !== currentCard.id) {
-                trimmedCards.push(card);
-            }
-        });
+                const updated = {...card}
+                updated.location = index - mod
+                trimmedCards.push(updated)
 
+                axios
+                .put(`api/scenes/${updated.id}/`, updated)
+                .then(response => console.log(response.data))
+                .catch(error => console.log(error.response.data))
+            } else {
+                // deletes the card we want deleted and tracks whether we've gotten to that card yet in our order
+                mod++;
+                axios
+                    .put(`api/scenes/${currentCard.id}/`, {...card, location: null})
+                    .then(response => console.log(response.data))
+                    .catch(error => console.log(error.response.data))
+            }
+        })
+        // saves the reordered scenes with the correctly updated locations in state
         setCards(trimmedCards);
         closeModal();
     }
 
-    // TODO communicate with backend
     const moveCard = (mod) => {
+        // prevents card from being moved outside the range of existing scenes
         if ((currentCard.location + mod >= cards.length) || (currentCard.location + mod < 0)) {
             closeModal();
             return;
         }
         
-        const shuffleCards = cards;
-
+        // saves in case user has made summary changes they haven't saved
+        saveCardChanges();
+        
+        // makes a new array of all scene objects
+        // removes the active scene from the array
+        // adds teh active scene back in moved one place forward or backward
+        const shuffleCards = [...cards];
         shuffleCards.splice(currentCard.location, 1)
         shuffleCards.splice(currentCard.location + mod, 0, currentCard)
 
+        // iterates through the scenes, reassinging each card's location value
+        // to its current index in the reordered array
         const updateLocations = shuffleCards.map((card, index) => {
             const updateCard = {...card};
             updateCard.location = index;
+
+            axios
+                .put(`api/scenes/${updateCard.id}/`, updateCard)
+                .then(response => console.log(response.data))
+                .catch(error => console.log(error.response.data))
+
             return updateCard;
         });
+        // saves the reordered scenes with the correctly updated locations in state
         setCards(updateLocations);
 
-        const movedCard = {...currentCard};
-        movedCard.location = currentCard.location + mod;
-        setCurrentCard(movedCard);
+        // updates the currentCard object in state to have the correct location
+        setCurrentCard({
+            id: currentCard.id,
+            card_summary: currentCard.card_summary,
+            location: currentCard.location + 1,
+            content_blocks: currentCard.content_blocks,
+            story: currentCard.story,
+            entity_key: currentCard.entity_key,
+        });
     }
 
-    return (
-        <div className="corkboard__wall">
-            <button className="btn btn-block story-list__title-change" onClick={backToDesk}>Go To Writing Desk</button>
 
-            <div className="corkboard__frame rounded p-5 d-flex justify-content-center align-items-center">
-                <div className="corkboard__board d-flex flex-wrap justify-content-center p-2">{cardComponents}</div>
-            </div>
-
-            <div className="corkboard__button-bar d-flex justify-content-center">
-                <button onClick={addCard} className="btn btn-medium btn-primary">Add New Card</button>
-            </div>
-
+    const newCardModal = () => {
+        return (
             <Modal 
-                show={showModal}
+                show={showNewCardModal}
+                onHide={closeModal}
+                animation={false}
+                backdrop='static'
+                centered={true}
+            >    
+                <Modal.Body>
+                    <Form>
+                        <Form.Group>
+                            <Form.Label>What's a quick summary of what happens in this scene?</Form.Label>
+                            <Form.Control
+                                as='textarea'
+                                value={currentCard.card_summary}
+                                onChange={changeCardSummary}
+                            />
+                        </Form.Group>
+                    </Form>
+                </Modal.Body>
+            
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={closeModal}>Close</Button>
+                    <Button variant="primary" onClick={saveNewCard}>Save New Scene</Button>
+                </Modal.Footer>
+            </Modal>
+        )
+    }
+
+
+    const changeCardModal = () => {
+        return (
+            <Modal 
+                show={showChangeCardModal}
                 onHide={closeModal}
                 animation={false}
                 backdrop='static'
@@ -225,19 +267,30 @@ const Corkboard = ({currentStoryId, backToDesk}) => {
                 </Modal.Body>
             
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={closeModal}>
-                        Close
-                    </Button>
-                    <Button variant="primary" onClick={saveCardChanges}>
-                        Save Changes
-                    </Button>
+                    <Button variant="secondary" onClick={closeModal}>Close</Button>
+                    <Button variant="primary" onClick={saveCardChanges}>Save Changes</Button> 
                     {currentCard.location === 0 ? null : <Button variant="info" onClick={() => moveCard(-1)}>Move Scene Earlier</Button>}
                     {currentCard.location === cards.length - 1 ? null : <Button variant="info" onClick={() => moveCard(1)}>Move Scene Later</Button>}
-                    <Button variant="danger" onClick={deleteCard}>
-                        Delete Scene
-                    </Button>
+                    <Button variant="danger" onClick={deleteCard}>Delete Scene</Button>
                 </Modal.Footer>
             </Modal>
+        )
+    }
+
+    return (
+        <div className="corkboard__wall">
+            <button className="btn btn-block story-list__title-change" onClick={backToDesk}>Go To Writing Desk</button>
+
+            <div className="corkboard__frame rounded p-5 d-flex justify-content-center align-items-center">
+                <div className="corkboard__board d-flex flex-wrap justify-content-center p-2">{cardComponents}</div>
+            </div>
+
+            <div className="corkboard__button-bar d-flex justify-content-center">
+                <button onClick={openNewCard} className="btn btn-medium btn-primary">Add New Card</button>
+            </div>
+
+            {changeCardModal()}
+            {newCardModal()}
         </div>
     )
 };
