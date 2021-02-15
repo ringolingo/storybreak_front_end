@@ -51,6 +51,9 @@ const Login = ({setUser}) => {
                 onFailure={onFailure}
                 cookiePolicy={'single_host_origin'}
                 isSignedIn={true}
+                render={renderProps => (
+                    <button onClick={renderProps.onClick} disabled={renderProps.disabled} className="btn btn-block">Login with Google</button>
+                )}
             />
         </div>
     );

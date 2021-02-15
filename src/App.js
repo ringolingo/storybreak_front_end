@@ -1,5 +1,5 @@
 import React, {useState, useEffect, forceRefresh } from 'react';
-import {Editor, EditorState, convertToRaw, convertFromRaw, Modifier, moveSelectionToEnd, genKey, ContentBlock, ContentState, List, getBlockMap, getKey, toOrderedMap} from 'draft-js';
+import {Editor, EditorState, convertToRaw, convertFromRaw, Modifier, moveSelectionToEnd} from 'draft-js';
 // import {BrowserRouter as Router, Switch, Route, Link} from 'react-router-dom';
 import axios from 'axios';
 import Modal from 'react-bootstrap/Modal';
@@ -26,8 +26,6 @@ function App() {
   const [showNewTitleModal, setShowNewTitleModal] = useState(false);
   const [showNewSceneModal, setShowNewSceneModal] = useState(false);
   const [newSceneSummary, setNewSceneSummary] = useState('');
-  const [newEntityKey, setNewEntityKey] = useState('');
-  const [newSceneId, setNewSceneId] = useState(null);
   const [user, setUser] = useState({
     id: null,
     email: '',
@@ -37,9 +35,9 @@ function App() {
 
 
   // app gets and remembers all stories
-  useEffect(() => {
-    getStories();
-  }, []);
+  // useEffect(() => {
+  //   getStories();
+  // }, []);
 
   useEffect(() => {
     getStories();
@@ -47,23 +45,32 @@ function App() {
 
   const getStories = () => {
     console.log('getStories is pulling stories for user number', user.id)
-    axios
-      .get(`/api/stories/?user=${user.id}`)
-      .then(response => {
-        setAllStories(response.data);
-        console.log('getstories response');
-      })
-      .catch(error => console.log(error.response));
+    if (user.id) {
+      axios
+        .get(`/api/stories/?user=${user.id}`)
+        .then(response => {
+          setAllStories(response.data);
+          console.log('getstories response');
+        })
+        .catch(error => console.log(error.response));
+    }
   }
 
 
   // app gets user login through google
-  const userCallback = (user) => {
+  const userCallbackLogIn = (user) => {
     setUser(user);
     getStories();
     console.log('usercallback is running')
   }
 
+  const userCallbackLogOut = (user) => {
+    setUser(user);
+    setCurrentStoryId(null);
+    setCurrentStoryTitle('');
+    setInBoardView(false);
+    console.log('usercallback is running')
+  }
 
   // app gets and remembers user's choice for current story
   // and sets it up in the editor state
@@ -402,6 +409,18 @@ function App() {
     setInBoardView(false);
   }
 
+  const switchViewButton = () => {
+    if (inBoardView) {
+      return (
+        <button className="btn btn-block" onClick={goToWritingDesk}>Go To Writing Desk</button>
+      )
+    } else {
+      return (
+        <button className="btn btn-block" onClick={goToStoryBoard}>Go To Story Board</button>
+      )
+    }
+  }
+
 
   // app displays the story the user wants to work on
   // either as a writing desk
@@ -415,18 +434,21 @@ function App() {
         return (
           <div className="writing-desk__desk">
             
-            <button className="btn btn-block story-list__title-change" onClick={goToStoryBoard}>Go To Story Board</button>
             
-            <div className="writing-desk__editor container border border-dark rounded w-75 h-75">
+            
+            <div className="writing-desk__editor container border border-dark rounded w-85 h-85">
               <Editor
                 editorState={editorState}
                 onChange={onEditorChange}
                 spellCheck={true}
               />
             </div>
+
+            {/* <button className="btn btn-block writing-desk__board-button" onClick={goToStoryBoard}>Go To Story Board</button> */}
     
             <div className="writing-desk__button-bar d-flex flex-row justify-content-center">
                 <button onClick={saveExistingWork} className="btn btn-primary rounded m-1">Save</button>
+                {/* <button className="btn btn-block" onClick={goToStoryBoard}>Go To Story Board</button> */}
                 <button onClick={openNewScene} className="btn btn-secondary rounded m-1">Add New Scene</button>
                 <button onClick={openTitleChange} className="btn btn-secondary rounded m-1">Change Title</button>
                 <button onClick={deleteWork} className="btn btn-danger rounded m-1">Delete Story</button>
@@ -440,10 +462,12 @@ function App() {
 
   return (
     <div>
-      <div className="d-flex justify-content-between">
+      {currentStoryId ? <h4 className="current-title-btn">{currentStoryTitle}</h4> : null }
+      <div className="d-flex justify-content-end main-options-nav">
+        {/* {currentStoryId ? <button className="btn btn-block" onClick={goToStoryBoard}>Go To Story Board</button> : null } */}
+        { currentStoryId ? switchViewButton() : null }
         {currentStoryId ? changeStory() : null }
-        {currentStoryId ? <h3>{currentStoryTitle}</h3> : null }
-        {user.email ? <Logout setUser={userCallback} /> : <Login setUser={userCallback} />}
+        {user.email ? <Logout setUser={userCallbackLogOut} /> : <Login setUser={userCallbackLogIn} />}
       </div>
 
       {currentStoryId ? storyInProgressView() : noStorySelectedView()}

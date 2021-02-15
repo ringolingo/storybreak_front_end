@@ -20,6 +20,10 @@ const Logout = ({setUser}) => {
                 clientId={clientId}
                 buttonText="Logout"
                 onLogoutSuccess={onSuccess}
+                render={renderProps => (
+                    <button onClick={renderProps.onClick} disabled={renderProps.disabled} className="btn btn-block">Log Out</button>
+                )}
+                className="btn btn-secondary google-log-btn"
             />
         </div>
     )

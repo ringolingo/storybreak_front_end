@@ -279,7 +279,7 @@ const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
 
     return (
         <div className="corkboard__wall">
-            <button className="btn btn-block story-list__title-change" onClick={backToDesk}>Go To Writing Desk</button>
+            {/* <button className="btn btn-block story-list__title-change" onClick={backToDesk}>Go To Writing Desk</button> */}
 
             <div className="corkboard__frame rounded p-5 d-flex justify-content-center align-items-center">
                 <div className="corkboard__board d-flex flex-wrap justify-content-center p-2">{cardComponents}</div>
