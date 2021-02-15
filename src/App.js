@@ -44,13 +44,11 @@ function App() {
   }, [user]);
 
   const getStories = () => {
-    console.log('getStories is pulling stories for user number', user.id)
     if (user.id) {
       axios
         .get(`/api/stories/?user=${user.id}`)
         .then(response => {
           setAllStories(response.data);
-          console.log('getstories response');
         })
         .catch(error => console.log(error.response));
     }
@@ -61,7 +59,6 @@ function App() {
   const userCallbackLogIn = (user) => {
     setUser(user);
     getStories();
-    console.log('usercallback is running')
   }
 
   const userCallbackLogOut = (user) => {
@@ -69,7 +66,7 @@ function App() {
     setCurrentStoryId(null);
     setCurrentStoryTitle('');
     setInBoardView(false);
-    console.log('usercallback is running')
+    setAllStories([]);
   }
 
   // app gets and remembers user's choice for current story

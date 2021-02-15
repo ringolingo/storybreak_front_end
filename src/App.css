@@ -46,12 +46,6 @@
   text-align: center;
 }
 
-.story-list__title-change {
-}
-
-.google-log-btn {
-}
-
 .current-title-btn {
   text-align: center;
   padding: 10px;
@@ -66,8 +60,4 @@
   min-height: 70vh;
   max-height: 70vh;
   overflow: auto;
-}
-
-.main-options-nav {
-  /* width: 86%; */
 }
