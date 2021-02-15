@@ -203,12 +203,12 @@ const Corkboard = ({currentStoryId, backToDesk, addSceneCallback}) => {
 
         // updates the currentCard object in state to have the correct location
         setCurrentCard({
-            id: null,
-            card_summary: '',
-            location: null,
-            content_blocks: '',
-            story: null,
-            entity_key: '',
+            id: currentCard.id,
+            card_summary: currentCard.card_summary,
+            location: currentCard.location + 1,
+            content_blocks: currentCard.content_blocks,
+            story: currentCard.story,
+            entity_key: currentCard.entity_key,
         });
     }
 

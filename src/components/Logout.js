@@ -6,7 +6,12 @@ const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 const Logout = ({setUser}) => {
     const onSuccess = () => {
         alert('you have logged out');
-        setUser('');
+        setUser({
+            id: null,
+            email: '',
+            first_name: '',
+            last_name: '',
+        });
     };
 
     return (

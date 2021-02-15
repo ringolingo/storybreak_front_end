@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, forceRefresh } from 'react';
 import {Editor, EditorState, convertToRaw, convertFromRaw, Modifier, moveSelectionToEnd, genKey, ContentBlock, ContentState, List, getBlockMap, getKey, toOrderedMap} from 'draft-js';
 // import {BrowserRouter as Router, Switch, Route, Link} from 'react-router-dom';
 import axios from 'axios';
@@ -28,7 +28,12 @@ function App() {
   const [newSceneSummary, setNewSceneSummary] = useState('');
   const [newEntityKey, setNewEntityKey] = useState('');
   const [newSceneId, setNewSceneId] = useState(null);
-  const [user, setUser] = useState('');
+  const [user, setUser] = useState({
+    id: null,
+    email: '',
+    first_name: '',
+    last_name: '',
+  });
 
 
   // app gets and remembers all stories
@@ -36,17 +41,27 @@ function App() {
     getStories();
   }, []);
 
+  useEffect(() => {
+    getStories();
+  }, [user]);
+
   const getStories = () => {
+    console.log('getStories is pulling stories for user number', user.id)
     axios
-      .get("/api/stories/")
-      .then(response => setAllStories(response.data))
-      .catch(error => console.log(error));
+      .get(`/api/stories/?user=${user.id}`)
+      .then(response => {
+        setAllStories(response.data);
+        console.log('getstories response');
+      })
+      .catch(error => console.log(error.response));
   }
 
 
   // app gets user login through google
   const userCallback = (user) => {
     setUser(user);
+    getStories();
+    console.log('usercallback is running')
   }
 
 
@@ -65,7 +80,7 @@ function App() {
       loadWork(response.data.draft_raw)
     })
     .catch(error => {
-      console.log(error);
+      console.log(error.response);
       setCurrentStoryId(null);
       setCurrentStoryTitle(null);
     })
@@ -140,7 +155,7 @@ function App() {
     }
 
     axios
-      .post('/api/stories/', {title: amendedTitle, draft_raw: "{\"blocks\":[],\"entityMap\":{}}"})
+      .post('/api/stories/', {title: amendedTitle, draft_raw: "{\"blocks\":[],\"entityMap\":{}}", user: user.id})
       .then(response => {
         setCurrentStoryId(response.data.id)
         setCurrentStoryTitle(response.data.title)
@@ -202,13 +217,14 @@ function App() {
     const updatedWork = {
         title: title,
         draft_raw: JSON.stringify(raw),
+        user: user.id,
     }
 
     console.log('savework')
     axios
         .put(`/api/stories/${currentStoryId}/`, updatedWork)
         .then(response => console.log(response.data))
-        .catch(error => console.log(error));
+        .catch(error => console.log(error.response));
   };
 
   const saveExistingWork = () => {
@@ -427,7 +443,7 @@ function App() {
       <div className="d-flex justify-content-between">
         {currentStoryId ? changeStory() : null }
         {currentStoryId ? <h3>{currentStoryTitle}</h3> : null }
-        {user ? <Logout setUser={userCallback} /> : <Login setUser={userCallback} />}
+        {user.email ? <Logout setUser={userCallback} /> : <Login setUser={userCallback} />}
       </div>
 
       {currentStoryId ? storyInProgressView() : noStorySelectedView()}

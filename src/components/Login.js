@@ -16,7 +16,7 @@ const Login = ({setUser}) => {
         axios
             .post("api/users/", userData)
             .then((response) => {
-                setUser(response.data.email);
+                setUser(response.data);
             })
             .catch((error) => console.log(error.response))
 
