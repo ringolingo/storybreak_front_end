@@ -46,7 +46,7 @@ function App() {
   const getStories = () => {
     if (user.id) {
       axios
-        .get(`http://52.32.18.200/api/stories/?user=${user.id}`)
+        .get(`/api/stories/?user=${user.id}`)
         .then(response => {
           setAllStories(response.data);
         })
@@ -79,7 +79,7 @@ function App() {
 
   const getCurrentStory = (story) => {
     axios
-    .get(`http://52.32.18.200/api/stories/${story}`)
+    .get(`/api/stories/${story}`)
     .then(response => {
       loadWork(response.data.draft_raw)
     })
@@ -159,7 +159,7 @@ function App() {
     }
 
     axios
-      .post('http://52.32.18.200/api/stories/', {title: amendedTitle, draft_raw: "{\"blocks\":[],\"entityMap\":{}}", user: user.id})
+      .post('/api/stories/', {title: amendedTitle, draft_raw: "{\"blocks\":[],\"entityMap\":{}}", user: user.id})
       .then(response => {
         setCurrentStoryId(response.data.id)
         setCurrentStoryTitle(response.data.title)
@@ -201,7 +201,7 @@ function App() {
     setAllStories(trimmedStories)
 
     axios
-      .delete(`http://52.32.18.200/api/stories/${currentStoryId}/`)
+      .delete(`/api/stories/${currentStoryId}/`)
       .then(response => console.log(response.data))
       .catch(error => console.log(error))
 
@@ -226,7 +226,7 @@ function App() {
 
     console.log('savework')
     axios
-        .put(`http://52.32.18.200/api/stories/${currentStoryId}/`, updatedWork)
+        .put(`/api/stories/${currentStoryId}/`, updatedWork)
         .then(response => console.log(response.data))
         .catch(error => console.log(error.response));
   };
@@ -302,7 +302,7 @@ function App() {
     }
 
     axios
-      .post("http://52.32.18.200/api/scenes/", newScene)
+      .post("/api/scenes/", newScene)
       .then(response => console.log(response.data))
       .catch(error => console.log(error.response))
       
