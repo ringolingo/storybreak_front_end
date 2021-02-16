@@ -14,7 +14,7 @@ const Login = ({setUser}) => {
             last_name: response.profileObj.familyName
         }
         axios
-            .post("api/users/", userData)
+            .post("http://52.32.18.200/api/users/", userData)
             .then((response) => {
                 setUser(response.data);
             })
