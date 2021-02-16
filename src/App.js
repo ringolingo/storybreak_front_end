@@ -459,7 +459,7 @@ function App() {
 
   return (
     <div className="site-body">
-      <div className="header__site-name sticky-top bg-secondary">
+      <div className="sticky-top bg-secondary">
         <h1>STORYBREAK</h1>
       </div>
 
