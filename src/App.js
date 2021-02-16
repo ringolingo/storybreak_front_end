@@ -458,18 +458,24 @@ function App() {
   }
 
   return (
-    <div>
-      {currentStoryId ? <h4 className="current-title-btn">{currentStoryTitle}</h4> : null }
-      <div className="d-flex justify-content-end main-options-nav">
-        {/* {currentStoryId ? <button className="btn btn-block" onClick={goToStoryBoard}>Go To Story Board</button> : null } */}
-        { currentStoryId ? switchViewButton() : null }
-        {currentStoryId ? changeStory() : null }
-        {user.email ? <Logout setUser={userCallbackLogOut} /> : <Login setUser={userCallbackLogIn} />}
+    <div className="site-body">
+      <div className="header__site-name sticky-top bg-secondary">
+        <h1>STORYBREAK</h1>
       </div>
 
-      {currentStoryId ? storyInProgressView() : noStorySelectedView()}
-      {newTitleModal()}
-      {newSceneModal()}
+      <div>
+          {currentStoryId ? <h4 className="current-title-btn">{currentStoryTitle}</h4> : null }
+          <div className="d-flex justify-content-end main-options-nav">
+            {/* {currentStoryId ? <button className="btn btn-block" onClick={goToStoryBoard}>Go To Story Board</button> : null } */}
+            { currentStoryId ? switchViewButton() : null }
+            {currentStoryId ? changeStory() : null }
+            {user.email ? <Logout setUser={userCallbackLogOut} /> : <Login setUser={userCallbackLogIn} />}
+          </div>
+
+          {currentStoryId ? storyInProgressView() : noStorySelectedView()}
+          {newTitleModal()}
+          {newSceneModal()}
+        </div>
     </div>
   );
 }
