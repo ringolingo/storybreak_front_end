@@ -1,11 +1,11 @@
 .corkboard__wall {
-    min-height: 83vh;
-    max-height: 83vh;
+    min-height: 80vh;
+    max-height: 80vh;
 }
 
 .corkboard__frame {
-    min-height: 75vh;
-    max-height: 75vh;
+    min-height: 70vh;
+    max-height: 70vh;
     background-color: #9c6644;
 }
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { GoogleLogin } from 'react-google-login'
 import axios from 'axios';
 
-const clientId = "195198641210-o0725v1k4223tg8v6t5qep3dd463f5q6.apps.googleusercontent.com";
+const client_id = ""
 
 const Login = ({setUser}) => {
     const onSuccess = (response) => {
@@ -52,7 +52,7 @@ const Login = ({setUser}) => {
                 cookiePolicy={'single_host_origin'}
                 isSignedIn={true}
                 render={renderProps => (
-                    <button onClick={renderProps.onClick} disabled={renderProps.disabled} className="btn btn-block">Login with Google</button>
+                    <button onClick={renderProps.onClick} disabled={renderProps.disabled} className="btn btn-block btn-light-green">login with google</button>
                 )}
             />
         </div>

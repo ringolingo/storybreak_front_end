@@ -176,19 +176,42 @@ function App() {
 
   // app creates story links and shows them to user for user to pick
   const generateTitles = allStories.map((story, i) => {
-    return <button className="btn story-list__title" key={i} id={story.id} onClick={selectStory} title={story.title}>
+    return <div className="d-flex justify-content-center">
+      <button className="btn story-list__title" key={i} id={story.id} onClick={selectStory} title={story.title}>
         {story.title}
-    </button>
+      </button>
+    </div>
   });
 
   const noStorySelectedView = () => {
-    return (
-      <div className="story-list">
-        <h3 className="story-list__header">What would you like to work on today?</h3>
+    if (user.id) {  
+      return (
+        <div className="story-list">
+          <h4 className="story-list__header">hello, {user.first_name}, what would you like to write today?</h4>
           {generateTitles}
-          <button className="btn story-list__title btn-primary" onClick={openNewTitle}>Start A New Story</button>
-      </div>
-    )
+          <div className="d-flex justify-content-center">
+            <button className="btn story-list__title btn-light-green" onClick={openNewTitle}>Start A New Story</button>
+          </div>
+        </div>
+      )
+    } else {
+      return (
+        <div className="no-user-page__box d-flex flex-column justify-content-around">
+          <div className="p-5">
+            <h3 className="story-list__header no-user-page__title p-2">welcome to storybreak</h3>
+            <p className="text-center p-2">write and outline your stories in one simple, clean interface</p>
+          </div>
+          
+          <div class="container p-5">
+            <div class="row">
+              <div class="col text-center">
+                <Login className="btn btn-block no-user-page__btn" setUser={userCallbackLogIn} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
   }
 
 
@@ -431,9 +454,7 @@ function App() {
         return (
           <div className="writing-desk__desk">
             
-            
-            
-            <div className="writing-desk__editor container border border-dark rounded w-85 h-85">
+            <div className="writing-desk__editor container border border-dark rounded rounded w-85 h-85">
               <Editor
                 editorState={editorState}
                 onChange={onEditorChange}
@@ -441,11 +462,8 @@ function App() {
               />
             </div>
 
-            {/* <button className="btn btn-block writing-desk__board-button" onClick={goToStoryBoard}>Go To Story Board</button> */}
-    
             <div className="writing-desk__button-bar d-flex flex-row justify-content-center">
                 <button onClick={saveExistingWork} className="btn btn-primary rounded m-1">Save</button>
-                {/* <button className="btn btn-block" onClick={goToStoryBoard}>Go To Story Board</button> */}
                 <button onClick={openNewScene} className="btn btn-secondary rounded m-1">Add New Scene</button>
                 <button onClick={openTitleChange} className="btn btn-secondary rounded m-1">Change Title</button>
                 <button onClick={deleteWork} className="btn btn-danger rounded m-1">Delete Story</button>
@@ -459,23 +477,26 @@ function App() {
 
   return (
     <div className="site-body">
-      <div className="sticky-top bg-secondary">
+      <div className="sticky-top header__site-name spring-green">
         <h1>STORYBREAK</h1>
       </div>
 
-      <div>
-          {currentStoryId ? <h4 className="current-title-btn">{currentStoryTitle}</h4> : null }
-          <div className="d-flex justify-content-end main-options-nav">
-            {/* {currentStoryId ? <button className="btn btn-block" onClick={goToStoryBoard}>Go To Story Board</button> : null } */}
-            { currentStoryId ? switchViewButton() : null }
-            {currentStoryId ? changeStory() : null }
-            {user.email ? <Logout setUser={userCallbackLogOut} /> : <Login setUser={userCallbackLogIn} />}
-          </div>
-
-          {currentStoryId ? storyInProgressView() : noStorySelectedView()}
-          {newTitleModal()}
-          {newSceneModal()}
+      <div className="body-site">
+        <div className="d-flex justify-content-end main-options-nav">
+          { currentStoryId ?  <div className="d-flex justify-content-center"><button className="btn btn-block story-list__title-change">{currentStoryTitle}</button></div> : null }
+          { currentStoryId ? switchViewButton() : null }
+          { currentStoryId ? changeStory() : null }
+          { user.email ? <Logout setUser={userCallbackLogOut} /> : null }
         </div>
+
+        {currentStoryId ? storyInProgressView() : noStorySelectedView()}
+        {newTitleModal()}
+        {newSceneModal()}
+      </div>
+
+      <div className="sticky-bottom spring-green ada-footer">
+        <p>storybreak is a student project by Ringo Alcock, Ada Developers Academy, Cohort 14</p>
+      </div>
     </div>
   );
 }

@@ -39,7 +39,7 @@
 
 .story-list__title {
   display: block;
-  width: 100%;
+  width: 80%;
 }
 
 .story-list__header {
@@ -66,8 +66,54 @@
   width: 100%;
   text-align: center;
   font-size: large;
+  padding: 8px 0px;
+  font-weight: bolder;
+  letter-spacing: 15px;
 }
 
 .site-body {
   width: 100%;
+  margin: 0px;
+}
+
+.no-user-page__btn {
+  padding: 10px;
+  margin: 5em;
+}
+
+.no-user-page__box {
+  max-height: 80vh;
+  min-height: 80vh;
+}
+
+.intro {
+  padding: 3em;
+}
+
+.body-site {
+  min-height: 85vh;
+  max-height: 85vh;
+}
+
+.main-options-nav {
+  width: 95%;
+}
+
+.spring-green {
+  background-color: #06d6a0;
+}
+
+.ada-footer {
+  padding: 4px;
+  text-align: center;
+  font-size: small;
+}
+
+.btn-light-green {
+  background-color: #b7e4c7;
+}
+
+* {
+  font-family: Menlo, Monaco, Consolas, 'Courier New',
+  monospace;
 }
